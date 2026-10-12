@@ -11,6 +11,20 @@ bool lastRawButtonPressed = false;
 bool stableButtonPressed = false;
 unsigned long lastButtonChangeMs = 0;
 
+void updateThrottleInput() {
+    const int throttleRaw = analogRead(THROTTLE_PIN);
+
+    vehicleState.throttlePosition = (static_cast<float>(throttleRaw) / 4095.0F) * 100.0F;
+}
+
+void updateVehicleSimulation() {
+    if (vehicleState.ignitionOn) {
+        vehicleState.engineRpm = 800.0F + (vehicleState.throttlePosition / 100.0F) * 5200.0F;
+    } else {
+        vehicleState.engineRpm = 0.0F;
+    }
+}
+
 void setup() {
     pinMode(IGNITION_BUTTON_PIN, INPUT_PULLUP);
 
@@ -28,15 +42,6 @@ void loop() {
     const bool buttonPressed = digitalRead(IGNITION_BUTTON_PIN) == LOW;
     const unsigned long now = millis();
 
-    const int throttleRaw = analogRead(THROTTLE_PIN);
-    vehicleState.throttlePosition = (static_cast<float>(throttleRaw) / 4095.0F) * 100.0F;
-
-    if (vehicleState.ignitionOn) {
-        vehicleState.engineRpm = 800.0F + (vehicleState.throttlePosition / 100.0F) * 5200.0F;
-    } else {
-        vehicleState.engineRpm = 0.0F;
-    }
-
     if (buttonPressed != lastRawButtonPressed) {
         lastButtonChangeMs = now;
         lastRawButtonPressed = buttonPressed;
@@ -48,9 +53,11 @@ void loop() {
 
             if (stableButtonPressed) {
                 vehicleState.ignitionOn = !vehicleState.ignitionOn;
-                Serial.printf("Ignition: %s, RPM: %.0f\n", vehicleState.ignitionOn ? "ON" : "OFF",
-                              vehicleState.engineRpm);
+                Serial.printf("Ignition: %s\n", vehicleState.ignitionOn ? "ON" : "OFF");
             }
         }
     }
+
+    updateThrottleInput();
+    updateVehicleSimulation();
 }
