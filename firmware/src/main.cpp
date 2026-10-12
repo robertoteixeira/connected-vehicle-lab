@@ -2,9 +2,17 @@
 
 #include "VehicleState.h"
 
+constexpr uint8_t IGNITION_BUTTON_PIN = 27;
+constexpr unsigned long BUTTON_DEBOUNCE_MS = 50;
+
 VehicleState vehicleState;
+bool lastRawButtonPressed = false;
+bool stableButtonPressed = false;
+unsigned long lastButtonChangeMs = 0;
 
 void setup() {
+    pinMode(IGNITION_BUTTON_PIN, INPUT_PULLUP);
+
     Serial.begin(115200);
 
     Serial.println("Connected Vehicle Lab");
@@ -15,4 +23,23 @@ void setup() {
                   vehicleState.engineRpm, vehicleState.throttlePosition);
 }
 
-void loop() {}
+void loop() {
+    const bool buttonPressed = digitalRead(IGNITION_BUTTON_PIN) == LOW;
+    const unsigned long now = millis();
+
+    if (buttonPressed != lastRawButtonPressed) {
+        lastButtonChangeMs = now;
+        lastRawButtonPressed = buttonPressed;
+    }
+
+    if ((now - lastButtonChangeMs) >= BUTTON_DEBOUNCE_MS) {
+        if (stableButtonPressed != buttonPressed) {
+            stableButtonPressed = buttonPressed;
+
+            if (stableButtonPressed) {
+                vehicleState.ignitionOn = !vehicleState.ignitionOn;
+                Serial.printf("Ignition: %s\n", vehicleState.ignitionOn ? "ON" : "OFF");
+            }
+        }
+    }
+}
