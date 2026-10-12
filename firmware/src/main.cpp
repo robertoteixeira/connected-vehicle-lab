@@ -5,11 +5,19 @@
 constexpr uint8_t IGNITION_BUTTON_PIN = 27;
 constexpr uint8_t THROTTLE_PIN = 34;
 constexpr unsigned long BUTTON_DEBOUNCE_MS = 50;
+constexpr float IDLE_RPM = 800.0F;
+constexpr float MAX_RPM = 6000.0F;
+constexpr float MAX_SPEED_KPH = 180.0F;
+constexpr float ACCELERATION_KPH_PER_SECOND = 30.0F;
+constexpr float DECELERATION_KPH_PER_SECOND = 20.0F;
+constexpr unsigned long TELEMETRY_INTERVAL_MS = 500;
 
 VehicleState vehicleState;
 bool lastRawButtonPressed = false;
 bool stableButtonPressed = false;
 unsigned long lastButtonChangeMs = 0;
+unsigned long lastSimulationUpdateMs = 0;
+unsigned long lastTelemetryMs = 0;
 
 void updateThrottleInput() {
     const int throttleRaw = analogRead(THROTTLE_PIN);
@@ -17,12 +25,37 @@ void updateThrottleInput() {
     vehicleState.throttlePosition = (static_cast<float>(throttleRaw) / 4095.0F) * 100.0F;
 }
 
-void updateVehicleSimulation() {
+void updateVehicleSimulation(float deltaTimeSeconds) {
     if (vehicleState.ignitionOn) {
-        vehicleState.engineRpm = 800.0F + (vehicleState.throttlePosition / 100.0F) * 5200.0F;
+        vehicleState.engineRpm =
+            IDLE_RPM + (vehicleState.throttlePosition / 100.0F) * (MAX_RPM - IDLE_RPM);
+
+        const float targetSpeedKph = (vehicleState.throttlePosition / 100.0F) * MAX_SPEED_KPH;
+        const float accelerationStep = ACCELERATION_KPH_PER_SECOND * deltaTimeSeconds;
+        const float decelerationStep = DECELERATION_KPH_PER_SECOND * deltaTimeSeconds;
+
+        if (vehicleState.speedKph < targetSpeedKph) {
+            vehicleState.speedKph += accelerationStep;
+
+            if (vehicleState.speedKph > targetSpeedKph) {
+                vehicleState.speedKph = targetSpeedKph;
+            }
+        } else if (vehicleState.speedKph > targetSpeedKph) {
+            vehicleState.speedKph -= decelerationStep;
+
+            if (vehicleState.speedKph < targetSpeedKph) {
+                vehicleState.speedKph = targetSpeedKph;
+            }
+        }
     } else {
         vehicleState.engineRpm = 0.0F;
+        vehicleState.speedKph = 0.0F;
     }
+}
+
+void printTelemetry() {
+    Serial.printf("Throttle: %.1f%%, RPM: %.0f, Speed: %.1f km/h\n", vehicleState.throttlePosition,
+                  vehicleState.engineRpm, vehicleState.speedKph);
 }
 
 void setup() {
@@ -59,5 +92,13 @@ void loop() {
     }
 
     updateThrottleInput();
-    updateVehicleSimulation();
+
+    const float deltaTimeSeconds = static_cast<float>(now - lastSimulationUpdateMs) / 1000.0F;
+    lastSimulationUpdateMs = now;
+    updateVehicleSimulation(deltaTimeSeconds);
+
+    if ((now - lastTelemetryMs) >= TELEMETRY_INTERVAL_MS) {
+        lastTelemetryMs = now;
+        printTelemetry();
+    }
 }
