@@ -11,6 +11,7 @@ constexpr float MAX_SPEED_KPH = 180.0F;
 constexpr float ACCELERATION_KPH_PER_SECOND = 30.0F;
 constexpr float DECELERATION_KPH_PER_SECOND = 20.0F;
 constexpr unsigned long TELEMETRY_INTERVAL_MS = 500;
+constexpr float THROTTLE_DEADBAND_PERCENT = 0.5F;
 
 VehicleState vehicleState;
 bool lastRawButtonPressed = false;
@@ -20,9 +21,22 @@ unsigned long lastSimulationUpdateMs = 0;
 unsigned long lastTelemetryMs = 0;
 
 void updateThrottleInput() {
-    const int throttleRaw = analogRead(THROTTLE_PIN);
+    constexpr int SAMPLE_COUNT = 16;
 
-    vehicleState.throttlePosition = (static_cast<float>(throttleRaw) / 4095.0F) * 100.0F;
+    int throttleRawSum = 0;
+
+    for (int i = 0; i < SAMPLE_COUNT; ++i) {
+        throttleRawSum += analogRead(THROTTLE_PIN);
+    }
+
+    const int throttleRaw = throttleRawSum / SAMPLE_COUNT;
+
+    const float throttlePercent = (static_cast<float>(throttleRaw) / 4095.0F) * 100.0F;
+    const float throttleDifference = fabsf(throttlePercent - vehicleState.throttlePosition);
+
+    if (throttleDifference > THROTTLE_DEADBAND_PERCENT) {
+        vehicleState.throttlePosition = throttlePercent;
+    }
 }
 
 void updateVehicleSimulation(float deltaTimeSeconds) {
