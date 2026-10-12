@@ -38,7 +38,9 @@ void loop() {
 
             if (stableButtonPressed) {
                 vehicleState.ignitionOn = !vehicleState.ignitionOn;
-                Serial.printf("Ignition: %s\n", vehicleState.ignitionOn ? "ON" : "OFF");
+                vehicleState.engineRpm = vehicleState.ignitionOn ? 800.0F : 0.0F;
+                Serial.printf("Ignition: %s, RPM: %.0f\n", vehicleState.ignitionOn ? "ON" : "OFF",
+                              vehicleState.engineRpm);
             }
         }
     }
