@@ -3,6 +3,7 @@
 #include "VehicleState.h"
 
 constexpr uint8_t IGNITION_BUTTON_PIN = 27;
+constexpr uint8_t THROTTLE_PIN = 34;
 constexpr unsigned long BUTTON_DEBOUNCE_MS = 50;
 
 VehicleState vehicleState;
@@ -27,6 +28,15 @@ void loop() {
     const bool buttonPressed = digitalRead(IGNITION_BUTTON_PIN) == LOW;
     const unsigned long now = millis();
 
+    const int throttleRaw = analogRead(THROTTLE_PIN);
+    vehicleState.throttlePosition = (static_cast<float>(throttleRaw) / 4095.0F) * 100.0F;
+
+    if (vehicleState.ignitionOn) {
+        vehicleState.engineRpm = 800.0F + (vehicleState.throttlePosition / 100.0F) * 5200.0F;
+    } else {
+        vehicleState.engineRpm = 0.0F;
+    }
+
     if (buttonPressed != lastRawButtonPressed) {
         lastButtonChangeMs = now;
         lastRawButtonPressed = buttonPressed;
@@ -38,7 +48,6 @@ void loop() {
 
             if (stableButtonPressed) {
                 vehicleState.ignitionOn = !vehicleState.ignitionOn;
-                vehicleState.engineRpm = vehicleState.ignitionOn ? 800.0F : 0.0F;
                 Serial.printf("Ignition: %s, RPM: %.0f\n", vehicleState.ignitionOn ? "ON" : "OFF",
                               vehicleState.engineRpm);
             }
