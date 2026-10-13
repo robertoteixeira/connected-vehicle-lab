@@ -12,6 +12,8 @@ constexpr float ACCELERATION_KPH_PER_SECOND = 30.0F;
 constexpr float DECELERATION_KPH_PER_SECOND = 20.0F;
 constexpr unsigned long TELEMETRY_INTERVAL_MS = 500;
 constexpr float THROTTLE_DEADBAND_PERCENT = 0.5F;
+constexpr float THROTTLE_MIN_PERCENT = 1.0F;
+constexpr float THROTTLE_MAX_PERCENT = 99.0F;
 
 VehicleState vehicleState;
 bool lastRawButtonPressed = false;
@@ -31,7 +33,14 @@ void updateThrottleInput() {
 
     const int throttleRaw = throttleRawSum / SAMPLE_COUNT;
 
-    const float throttlePercent = (static_cast<float>(throttleRaw) / 4095.0F) * 100.0F;
+    float throttlePercent = (static_cast<float>(throttleRaw) / 4095.0F) * 100.0F;
+
+    if (throttlePercent <= THROTTLE_MIN_PERCENT) {
+        throttlePercent = 0.0F;
+    } else if (throttlePercent >= THROTTLE_MAX_PERCENT) {
+        throttlePercent = 100.0F;
+    }
+
     const float throttleDifference = fabsf(throttlePercent - vehicleState.throttlePosition);
 
     if (throttleDifference > THROTTLE_DEADBAND_PERCENT) {
