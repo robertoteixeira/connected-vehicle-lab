@@ -6,6 +6,7 @@
 constexpr uint8_t IGNITION_BUTTON_PIN = 27;
 constexpr uint8_t THROTTLE_PIN = 34;
 constexpr uint8_t BRAKE_BUTTON_PIN = 26;
+constexpr uint8_t HEADLIGHT_BUTTON_PIN = 25;
 constexpr unsigned long BUTTON_DEBOUNCE_MS = 50;
 constexpr float IDLE_RPM = 800.0F;
 constexpr float MAX_RPM = 6000.0F;
@@ -19,12 +20,14 @@ constexpr float THROTTLE_MAX_PERCENT = 99.0F;
 constexpr float BRAKING_KPH_PER_SECOND = 60.0F;
 
 VehicleState vehicleState;
-DebounceButton ignitionButton(IGNITION_BUTTON_PIN, BUTTON_DEBOUNCE_MS);
-DebounceButton brakeButton(BRAKE_BUTTON_PIN, BUTTON_DEBOUNCE_MS);
+DebouncedButton ignitionButton(IGNITION_BUTTON_PIN, BUTTON_DEBOUNCE_MS);
+DebouncedButton brakeButton(BRAKE_BUTTON_PIN, BUTTON_DEBOUNCE_MS);
+DebouncedButton headlightButton(HEADLIGHT_BUTTON_PIN, BUTTON_DEBOUNCE_MS);
 
 unsigned long lastSimulationUpdateMs = 0;
 unsigned long lastTelemetryMs = 0;
 bool lastIgnitionPressed = false;
+bool lastHeadlightPressed = false;
 
 void updateThrottleInput() {
     constexpr int SAMPLE_COUNT = 16;
@@ -92,14 +95,16 @@ void updateVehicleSimulation(float deltaTimeSeconds) {
 }
 
 void printTelemetry() {
-    Serial.printf("Throttle: %.1f%%, RPM: %.0f, Speed: %.1f km/h, Brake: %s\n",
+    Serial.printf("Throttle: %.1f%%, RPM: %.0f, Speed: %.1f km/h, Brake: %s, Headlights: %s\n",
                   vehicleState.throttlePosition, vehicleState.engineRpm, vehicleState.speedKph,
-                  vehicleState.brakePressed ? "ON" : "OFF");
+                  vehicleState.brakePressed ? "ON" : "OFF",
+                  vehicleState.headlightsOn ? "ON" : "OFF");
 }
 
 void setup() {
     ignitionButton.begin();
     brakeButton.begin();
+    headlightButton.begin();
 
     Serial.begin(115200);
 
@@ -116,6 +121,8 @@ void loop() {
     const bool buttonPressed = ignitionButton.isPressed();
     brakeButton.update();
     vehicleState.brakePressed = brakeButton.isPressed();
+    headlightButton.update();
+    const bool headlightPressed = headlightButton.isPressed();
 
     const unsigned long now = millis();
 
@@ -125,6 +132,13 @@ void loop() {
     }
 
     lastIgnitionPressed = buttonPressed;
+
+    if (headlightPressed && !lastHeadlightPressed) {
+        vehicleState.headlightsOn = !vehicleState.headlightsOn;
+        Serial.printf("Headlights: %s\n", vehicleState.headlightsOn ? "ON" : "OFF");
+    }
+
+    lastHeadlightPressed = headlightPressed;
 
     updateThrottleInput();
 
