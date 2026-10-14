@@ -15,6 +15,7 @@ constexpr unsigned long TELEMETRY_INTERVAL_MS = 500;
 constexpr float THROTTLE_DEADBAND_PERCENT = 0.5F;
 constexpr float THROTTLE_MIN_PERCENT = 1.0F;
 constexpr float THROTTLE_MAX_PERCENT = 99.0F;
+constexpr float BRAKING_KPH_PER_SECOND = 60.0F;
 
 VehicleState vehicleState;
 bool lastRawButtonPressed = false;
@@ -57,6 +58,17 @@ void updateVehicleSimulation(float deltaTimeSeconds) {
         const float targetSpeedKph = (vehicleState.throttlePosition / 100.0F) * MAX_SPEED_KPH;
         const float accelerationStep = ACCELERATION_KPH_PER_SECOND * deltaTimeSeconds;
         const float decelerationStep = DECELERATION_KPH_PER_SECOND * deltaTimeSeconds;
+        const float brakingStep = BRAKING_KPH_PER_SECOND * deltaTimeSeconds;
+
+        if (vehicleState.brakePressed) {
+            vehicleState.speedKph -= brakingStep;
+
+            if (vehicleState.speedKph < 0.0F) {
+                vehicleState.speedKph = 0.0F;
+            }
+
+            return;
+        }
 
         if (vehicleState.speedKph < targetSpeedKph) {
             vehicleState.speedKph += accelerationStep;
