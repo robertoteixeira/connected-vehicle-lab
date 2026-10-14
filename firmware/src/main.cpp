@@ -4,6 +4,7 @@
 
 constexpr uint8_t IGNITION_BUTTON_PIN = 27;
 constexpr uint8_t THROTTLE_PIN = 34;
+constexpr uint8_t BRAKE_BUTTON_PIN = 26;
 constexpr unsigned long BUTTON_DEBOUNCE_MS = 50;
 constexpr float IDLE_RPM = 800.0F;
 constexpr float MAX_RPM = 6000.0F;
@@ -77,12 +78,14 @@ void updateVehicleSimulation(float deltaTimeSeconds) {
 }
 
 void printTelemetry() {
-    Serial.printf("Throttle: %.1f%%, RPM: %.0f, Speed: %.1f km/h\n", vehicleState.throttlePosition,
-                  vehicleState.engineRpm, vehicleState.speedKph);
+    Serial.printf("Throttle: %.1f%%, RPM: %.0f, Speed: %.1f km/h, Brake: %s\n",
+                  vehicleState.throttlePosition, vehicleState.engineRpm, vehicleState.speedKph,
+                  vehicleState.brakePressed ? "ON" : "OFF");
 }
 
 void setup() {
     pinMode(IGNITION_BUTTON_PIN, INPUT_PULLUP);
+    pinMode(BRAKE_BUTTON_PIN, INPUT_PULLUP);
 
     Serial.begin(115200);
 
@@ -96,6 +99,7 @@ void setup() {
 
 void loop() {
     const bool buttonPressed = digitalRead(IGNITION_BUTTON_PIN) == LOW;
+    vehicleState.brakePressed = digitalRead(BRAKE_BUTTON_PIN) == LOW;
     const unsigned long now = millis();
 
     if (buttonPressed != lastRawButtonPressed) {
