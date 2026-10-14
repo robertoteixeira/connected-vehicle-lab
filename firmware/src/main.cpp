@@ -1,5 +1,6 @@
 #include <Arduino.h>
 
+#include "DebouncedButton.h"
 #include "VehicleState.h"
 
 constexpr uint8_t IGNITION_BUTTON_PIN = 27;
@@ -18,11 +19,12 @@ constexpr float THROTTLE_MAX_PERCENT = 99.0F;
 constexpr float BRAKING_KPH_PER_SECOND = 60.0F;
 
 VehicleState vehicleState;
-bool lastRawButtonPressed = false;
-bool stableButtonPressed = false;
-unsigned long lastButtonChangeMs = 0;
+DebounceButton ignitionButton(IGNITION_BUTTON_PIN, BUTTON_DEBOUNCE_MS);
+DebounceButton brakeButton(BRAKE_BUTTON_PIN, BUTTON_DEBOUNCE_MS);
+
 unsigned long lastSimulationUpdateMs = 0;
 unsigned long lastTelemetryMs = 0;
+bool lastIgnitionPressed = false;
 
 void updateThrottleInput() {
     constexpr int SAMPLE_COUNT = 16;
@@ -96,8 +98,8 @@ void printTelemetry() {
 }
 
 void setup() {
-    pinMode(IGNITION_BUTTON_PIN, INPUT_PULLUP);
-    pinMode(BRAKE_BUTTON_PIN, INPUT_PULLUP);
+    ignitionButton.begin();
+    brakeButton.begin();
 
     Serial.begin(115200);
 
@@ -110,25 +112,19 @@ void setup() {
 }
 
 void loop() {
-    const bool buttonPressed = digitalRead(IGNITION_BUTTON_PIN) == LOW;
-    vehicleState.brakePressed = digitalRead(BRAKE_BUTTON_PIN) == LOW;
+    ignitionButton.update();
+    const bool buttonPressed = ignitionButton.isPressed();
+    brakeButton.update();
+    vehicleState.brakePressed = brakeButton.isPressed();
+
     const unsigned long now = millis();
 
-    if (buttonPressed != lastRawButtonPressed) {
-        lastButtonChangeMs = now;
-        lastRawButtonPressed = buttonPressed;
+    if (buttonPressed && !lastIgnitionPressed) {
+        vehicleState.ignitionOn = !vehicleState.ignitionOn;
+        Serial.printf("Ignition: %s\n", vehicleState.ignitionOn ? "ON" : "OFF");
     }
 
-    if ((now - lastButtonChangeMs) >= BUTTON_DEBOUNCE_MS) {
-        if (stableButtonPressed != buttonPressed) {
-            stableButtonPressed = buttonPressed;
-
-            if (stableButtonPressed) {
-                vehicleState.ignitionOn = !vehicleState.ignitionOn;
-                Serial.printf("Ignition: %s\n", vehicleState.ignitionOn ? "ON" : "OFF");
-            }
-        }
-    }
+    lastIgnitionPressed = buttonPressed;
 
     updateThrottleInput();
 
