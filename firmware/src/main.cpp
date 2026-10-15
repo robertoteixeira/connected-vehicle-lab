@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <Wire.h>
 
 #include "DebouncedButton.h"
 #include "VehicleState.h"
@@ -101,12 +102,27 @@ void printTelemetry() {
                   vehicleState.headlightsOn ? "ON" : "OFF");
 }
 
+void scanI2cBus() {
+    Serial.println("Scanning I2C bus...");
+
+    for (uint8_t address = 1; address < 127; address++) {
+        Wire.beginTransmission(address);
+        const uint8_t error = Wire.endTransmission();
+
+        if (error == 0) {
+            Serial.printf("I2C device found at address 0x%02X\n", address);
+        }
+    }
+}
+
 void setup() {
     ignitionButton.begin();
     brakeButton.begin();
     headlightButton.begin();
 
     Serial.begin(115200);
+    Wire.begin(21, 22);
+    scanI2cBus();
 
     Serial.println("Connected Vehicle Lab");
     Serial.println("ESP32 booted successfully");

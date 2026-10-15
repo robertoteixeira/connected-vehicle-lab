@@ -2,9 +2,9 @@
 
 #include <Arduino.h>
 
-class DebounceButton {
+class DebouncedButton {
    public:
-    DebounceButton(uint8_t pin, unsigned long debounceMs);
+    DebouncedButton(uint8_t pin, unsigned long debounceMs);
 
     void begin();
     void update();

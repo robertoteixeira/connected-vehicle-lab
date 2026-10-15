@@ -1,11 +1,11 @@
 #include "DebouncedButton.h"
 
-DebounceButton::DebounceButton(uint8_t pin, unsigned long debounceMs)
+DebouncedButton::DebouncedButton(uint8_t pin, unsigned long debounceMs)
     : pin_(pin), debounceMs_(debounceMs) {}
 
-void DebounceButton::begin() { pinMode(pin_, INPUT_PULLUP); }
+void DebouncedButton::begin() { pinMode(pin_, INPUT_PULLUP); }
 
-void DebounceButton::update() {
+void DebouncedButton::update() {
     const bool rawPressed = digitalRead(pin_) == LOW;
     const unsigned long now = millis();
 
@@ -19,4 +19,4 @@ void DebounceButton::update() {
     }
 }
 
-bool DebounceButton::isPressed() const { return stablePressed_; }
+bool DebouncedButton::isPressed() const { return stablePressed_; }

@@ -10,6 +10,11 @@
             "includePath": [
                 "/Users/robertoteixeira/Dev/Projects/Personal/connected-vehicle-lab/firmware/include",
                 "/Users/robertoteixeira/Dev/Projects/Personal/connected-vehicle-lab/firmware/src",
+                "/Users/robertoteixeira/Dev/Projects/Personal/connected-vehicle-lab/firmware/.pio/libdeps/esp32dev/Adafruit SSD1306",
+                "/Users/robertoteixeira/Dev/Projects/Personal/connected-vehicle-lab/firmware/.pio/libdeps/esp32dev/Adafruit GFX Library",
+                "/Users/robertoteixeira/Dev/Projects/Personal/connected-vehicle-lab/firmware/.pio/libdeps/esp32dev/Adafruit BusIO",
+                "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src",
+                "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
                 "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/newlib/platform_include",
                 "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/freertos/include",
                 "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/freertos/include/esp_additions/freertos",
@@ -228,7 +233,6 @@
                 "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/RainMaker/src",
                 "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/SD/src",
                 "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/SD_MMC/src",
-                "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src",
                 "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/SPIFFS/src",
                 "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/SimpleBLE/src",
                 "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/Ticker/src",
@@ -238,7 +242,6 @@
                 "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src",
                 "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/WiFiClientSecure/src",
                 "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/WiFiProv/src",
-                "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
                 ""
             ],
             "browse": {
@@ -246,6 +249,11 @@
                 "path": [
                     "/Users/robertoteixeira/Dev/Projects/Personal/connected-vehicle-lab/firmware/include",
                     "/Users/robertoteixeira/Dev/Projects/Personal/connected-vehicle-lab/firmware/src",
+                    "/Users/robertoteixeira/Dev/Projects/Personal/connected-vehicle-lab/firmware/.pio/libdeps/esp32dev/Adafruit SSD1306",
+                    "/Users/robertoteixeira/Dev/Projects/Personal/connected-vehicle-lab/firmware/.pio/libdeps/esp32dev/Adafruit GFX Library",
+                    "/Users/robertoteixeira/Dev/Projects/Personal/connected-vehicle-lab/firmware/.pio/libdeps/esp32dev/Adafruit BusIO",
+                    "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src",
+                    "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
                     "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/newlib/platform_include",
                     "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/freertos/include",
                     "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/freertos/include/esp_additions/freertos",
@@ -464,7 +472,6 @@
                     "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/RainMaker/src",
                     "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/SD/src",
                     "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/SD_MMC/src",
-                    "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src",
                     "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/SPIFFS/src",
                     "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/SimpleBLE/src",
                     "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/Ticker/src",
@@ -474,7 +481,6 @@
                     "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src",
                     "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/WiFiClientSecure/src",
                     "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/WiFiProv/src",
-                    "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
                     ""
                 ]
             },
