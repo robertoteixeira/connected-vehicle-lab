@@ -1,3 +1,4 @@
+#include <Adafruit_SSD1306.h>
 #include <Arduino.h>
 #include <Wire.h>
 
@@ -15,18 +16,26 @@ constexpr float MAX_SPEED_KPH = 180.0F;
 constexpr float ACCELERATION_KPH_PER_SECOND = 30.0F;
 constexpr float DECELERATION_KPH_PER_SECOND = 20.0F;
 constexpr unsigned long TELEMETRY_INTERVAL_MS = 500;
+constexpr unsigned long DISPLAY_INTERVAL_MS = 100;
 constexpr float THROTTLE_DEADBAND_PERCENT = 0.5F;
 constexpr float THROTTLE_MIN_PERCENT = 1.0F;
 constexpr float THROTTLE_MAX_PERCENT = 99.0F;
 constexpr float BRAKING_KPH_PER_SECOND = 60.0F;
 
+constexpr int SCREEN_WIDTH = 128;
+constexpr int SCREEN_HEIGHT = 64;
+constexpr int OLED_RESET_PIN = -1;
+constexpr uint8_t OLED_ADDRESS = 0x3C;
+
 VehicleState vehicleState;
 DebouncedButton ignitionButton(IGNITION_BUTTON_PIN, BUTTON_DEBOUNCE_MS);
 DebouncedButton brakeButton(BRAKE_BUTTON_PIN, BUTTON_DEBOUNCE_MS);
 DebouncedButton headlightButton(HEADLIGHT_BUTTON_PIN, BUTTON_DEBOUNCE_MS);
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET_PIN);
 
 unsigned long lastSimulationUpdateMs = 0;
 unsigned long lastTelemetryMs = 0;
+unsigned long lastDisplayUpdateMs = 0;
 bool lastIgnitionPressed = false;
 bool lastHeadlightPressed = false;
 
@@ -115,6 +124,31 @@ void scanI2cBus() {
     }
 }
 
+void updateDisplay() {
+    display.clearDisplay();
+
+    display.setTextColor(SSD1306_WHITE);
+    display.setTextSize(1);
+    display.setCursor(0, 0);
+
+    display.println("CONNECTED VEHICLE");
+
+    display.println();
+    display.setTextSize(2);
+    display.printf("%.0f km/h", vehicleState.speedKph);
+
+    display.println();
+    display.setTextSize(1);
+    display.printf("RPM: %.0f", vehicleState.engineRpm);
+
+    display.println();
+    display.printf("IGN:%s BRK:%s LGT:%s", vehicleState.ignitionOn ? "ON" : "OFF",
+                   vehicleState.brakePressed ? "ON" : "OFF",
+                   vehicleState.headlightsOn ? "ON" : "OFF");
+
+    display.display();
+}
+
 void setup() {
     ignitionButton.begin();
     brakeButton.begin();
@@ -122,6 +156,13 @@ void setup() {
 
     Serial.begin(115200);
     Wire.begin(21, 22);
+
+    if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) {
+        Serial.println("OLED initialization failed");
+    }
+
+    updateDisplay();
+
     scanI2cBus();
 
     Serial.println("Connected Vehicle Lab");
@@ -161,6 +202,11 @@ void loop() {
     const float deltaTimeSeconds = static_cast<float>(now - lastSimulationUpdateMs) / 1000.0F;
     lastSimulationUpdateMs = now;
     updateVehicleSimulation(deltaTimeSeconds);
+
+    if ((now - lastDisplayUpdateMs) >= DISPLAY_INTERVAL_MS) {
+        lastDisplayUpdateMs = now;
+        updateDisplay();
+    }
 
     if ((now - lastTelemetryMs) >= TELEMETRY_INTERVAL_MS) {
         lastTelemetryMs = now;
