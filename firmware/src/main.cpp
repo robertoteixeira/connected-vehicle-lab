@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 
+#include "BleVehicleService.h"
 #include "DebouncedButton.h"
 #include "VehicleState.h"
 
@@ -32,6 +33,7 @@ DebouncedButton ignitionButton(IGNITION_BUTTON_PIN, BUTTON_DEBOUNCE_MS);
 DebouncedButton brakeButton(BRAKE_BUTTON_PIN, BUTTON_DEBOUNCE_MS);
 DebouncedButton headlightButton(HEADLIGHT_BUTTON_PIN, BUTTON_DEBOUNCE_MS);
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET_PIN);
+BleVehicleService bleVehicleService;
 
 unsigned long lastSimulationUpdateMs = 0;
 unsigned long lastTelemetryMs = 0;
@@ -155,6 +157,7 @@ void setup() {
     headlightButton.begin();
 
     Serial.begin(115200);
+    bleVehicleService.begin();
     Wire.begin(21, 22);
 
     if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) {
