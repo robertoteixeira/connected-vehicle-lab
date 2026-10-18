@@ -214,7 +214,7 @@ void loop() {
     if ((now - lastTelemetryMs) >= TELEMETRY_INTERVAL_MS) {
         lastTelemetryMs = now;
 
-        bleVehicleService.udpdate(vehicleState);
+        bleVehicleService.update(vehicleState);
         printTelemetry();
     }
 }
