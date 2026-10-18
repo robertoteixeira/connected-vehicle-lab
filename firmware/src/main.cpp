@@ -157,7 +157,7 @@ void setup() {
     headlightButton.begin();
 
     Serial.begin(115200);
-    bleVehicleService.begin();
+    bleVehicleService.begin(vehicleState);
     Wire.begin(21, 22);
 
     if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) {
@@ -213,6 +213,8 @@ void loop() {
 
     if ((now - lastTelemetryMs) >= TELEMETRY_INTERVAL_MS) {
         lastTelemetryMs = now;
+
+        bleVehicleService.udpdate(vehicleState);
         printTelemetry();
     }
 }
