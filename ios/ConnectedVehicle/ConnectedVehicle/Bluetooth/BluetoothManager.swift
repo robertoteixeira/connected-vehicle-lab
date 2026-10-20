@@ -16,6 +16,7 @@ final class BluetoothManager: NSObject,
                               CBPeripheralDelegate {
     private var centralManager: CBCentralManager!
     private var vehiclePeripheral: CBPeripheral?
+    private var vehicleStateCharacteristic: CBCharacteristic?
     
     private let vehicleServiceUUID = CBUUID(
         string: "7B9F0001-6C5A-4E8F-9D3A-2F1B7C8E0001"
@@ -115,6 +116,47 @@ final class BluetoothManager: NSObject,
 
         for characteristic in characteristics {
             print("Discovered characteristic: \(characteristic.uuid)")
+            
+            if characteristic.uuid == vehicleStateCharacteristicUUID {
+                vehicleStateCharacteristic = characteristic
+                peripheral.readValue(for: characteristic)
+                peripheral.setNotifyValue(true, for: characteristic)
+            }
         }
+    }
+    
+    func peripheral(
+        _ peripheral: CBPeripheral,
+        didUpdateValueFor characteristic: CBCharacteristic,
+        error: Error?
+    ) {
+        if let error {
+            print("Value update failed: \(error)")
+            return
+        }
+
+        guard characteristic.uuid == vehicleStateCharacteristicUUID,
+              let data = characteristic.value,
+              let payload = String(data: data, encoding: .utf8) else {
+            return
+        }
+
+        print("Vehicle state: \(payload)")
+    }
+    
+    func peripheral(
+        _ peripheral: CBPeripheral,
+        didUpdateNotificationStateFor characteristic: CBCharacteristic,
+        error: Error?
+    ) {
+        if let error {
+            print("Notification subscription failed: \(error)")
+            return
+        }
+
+        print(
+            "Notifications \(characteristic.isNotifying ? "enabled" : "disabled") " +
+            "for \(characteristic.uuid)"
+        )
     }
 }

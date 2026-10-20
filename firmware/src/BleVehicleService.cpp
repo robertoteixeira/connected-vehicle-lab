@@ -1,5 +1,6 @@
 #include "BleVehicleService.h"
 
+#include <BLE2902.h>
 #include <BLEDevice.h>
 
 #include <cstdio>
@@ -19,6 +20,8 @@ void BleVehicleService::begin(const VehicleState& vehicleState) {
         VEHICLE_STATE_CHARACTERISTIC_UUID,
         BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
 
+    vehicleStateCharacteristic_->addDescriptor(new BLE2902());
+
     char payload[128];
     serializeVehicleState(vehicleState, payload, sizeof(payload));
 
@@ -37,7 +40,7 @@ void BleVehicleService::update(const VehicleState& vehicleState) {
     char payload[128];
     serializeVehicleState(vehicleState, payload, sizeof(payload));
 
-    if (strcmp(payload, lastPayload_)) {
+    if (strcmp(payload, lastPayload_) == 0) {
         return;
     }
 
