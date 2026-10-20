@@ -26,6 +26,7 @@ final class BluetoothManager: NSObject,
     )
     
     @Published private(set) var vehicleState = VehicleState()
+    @Published private(set) var isConnected = false
     
     override init() {
         super.init()
@@ -73,9 +74,34 @@ final class BluetoothManager: NSObject,
         _ central: CBCentralManager,
         didConnect peripheral: CBPeripheral
     ) {
+        isConnected = true
+        
         print("Connected: \(peripheral.name ?? "Unknown")")
+        
         peripheral.delegate = self
         peripheral.discoverServices([vehicleServiceUUID])
+    }
+    
+    func centralManager(
+        _ central: CBCentralManager,
+        didDisconnectPeripheral peripheral: CBPeripheral,
+        error: (any Error)?
+    ) {
+        isConnected = false
+        
+        if let error {
+            print("Disconnected with error: \(error)")
+        } else {
+            print("Disconnected: \(peripheral.name ?? "Unknown")")
+        }
+        
+        vehiclePeripheral = nil
+        vehicleStateCharacteristic = nil
+        
+        central.scanForPeripherals(
+            withServices: [vehicleServiceUUID],
+            options: nil
+        )
     }
     
     func peripheral(
