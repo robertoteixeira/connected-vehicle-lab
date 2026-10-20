@@ -98,10 +98,20 @@ final class BluetoothManager: NSObject,
         vehiclePeripheral = nil
         vehicleStateCharacteristic = nil
         
-        central.scanForPeripherals(
-            withServices: [vehicleServiceUUID],
-            options: nil
-        )
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(2))
+            
+            guard let self,
+                  self.centralManager.state == .poweredOn,
+                  !self.isConnected else {
+                return
+            }
+            
+            self.centralManager.scanForPeripherals(
+                withServices: [self.vehicleServiceUUID],
+                options: nil
+            )
+        }
     }
     
     func peripheral(
