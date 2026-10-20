@@ -14,6 +14,7 @@ struct ConnectedVehicleApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(bluetoothManager)
         }
     }
 }

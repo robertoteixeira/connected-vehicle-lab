@@ -13,4 +13,41 @@ struct VehicleState: Equatable {
     var speedKph: Float = 0
     var engineRpm: Float = 0
     var throttlePosition: Float = 0
+    
+    init() {}
+    
+    init?(blePayload: String) {
+        let value = Dictionary(
+            uniqueKeysWithValues: blePayload
+                .split(separator: ",")
+                .compactMap { component -> (String, String)? in
+                    let parts = component.split(separator: "=", maxSplits: 1)
+                    
+                    guard parts.count == 2 else { return nil }
+                    
+                    return (String(parts[0]), String(parts[1]))
+                }
+        )
+        
+        guard
+            let ignition = value["ign"],
+            let speed = value["speed"],
+            let rpm = value["rpm"],
+            let throttle = value["thr"],
+            let brake = value["brk"],
+            let headlights = value["lgt"],
+            let speedKph = Float(speed),
+            let engineRpm = Float(rpm),
+            let throttlePosition = Float(throttle)
+        else { return nil }
+        
+        ignitionOn = ignition == "1"
+        brakePressed = brake == "1"
+        headlightsOn = headlights == "1"
+        
+        self.speedKph = speedKph
+        self.engineRpm = engineRpm
+        self.throttlePosition = throttlePosition
+    }
 }
+    

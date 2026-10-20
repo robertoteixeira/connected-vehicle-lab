@@ -25,6 +25,8 @@ final class BluetoothManager: NSObject,
         string: "7B9F0002-6C5A-4E8F-9D3A-2F1B7C8E0001"
     )
     
+    @Published private(set) var vehicleState = VehicleState()
+    
     override init() {
         super.init()
         centralManager = CBCentralManager(delegate: self, queue: nil)
@@ -140,8 +142,15 @@ final class BluetoothManager: NSObject,
               let payload = String(data: data, encoding: .utf8) else {
             return
         }
+        
+        guard let state = VehicleState(blePayload: payload) else {
+            print("Failed to parse vehicle state: \(payload)")
+            return
+        }
+        
+        vehicleState = state
 
-        print("Vehicle state: \(payload)")
+        print("Vehicle state: \(state)")
     }
     
     func peripheral(

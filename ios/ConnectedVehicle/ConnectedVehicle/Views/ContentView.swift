@@ -8,12 +8,11 @@
 import SwiftUI
 
 struct ContentView: View {
+    @EnvironmentObject private var bluetoothManager: BluetoothManager
+    
     var body: some View {
         VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+            Text("Speed: \(bluetoothManager.vehicleState.speedKph, specifier: "%.1f") km/h")
         }
         .padding()
     }
