@@ -6,7 +6,7 @@
 
 class BleVehicleService {
    public:
-    void begin(const VehicleState& vehicleState);
+    void begin(BLEServer* server, const VehicleState& vehicleState);
     void update(const VehicleState& vehicleState);
 
    private:

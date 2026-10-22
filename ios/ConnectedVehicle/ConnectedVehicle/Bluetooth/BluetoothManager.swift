@@ -25,8 +25,17 @@ final class BluetoothManager: NSObject,
         string: "7B9F0002-6C5A-4E8F-9D3A-2F1B7C8E0001"
     )
     
+    private let provisioningServiceUUID = CBUUID(
+        string: "7B9F0010-6C5A-4E8F-9D3A-2F1B7C8E0001"
+    )
+    
+    private let deviceIdentityCharacteristicUUID = CBUUID(
+        string: "7B9F0011-6C5A-4E8F-9D3A-2F1B7C8E0001"
+    )
+    
     @Published private(set) var vehicleState = VehicleState()
     @Published private(set) var isConnected = false
+    @Published private(set) var deviceIdentity: DeviceIdentity?
     
     override init() {
         super.init()
@@ -79,7 +88,7 @@ final class BluetoothManager: NSObject,
         print("Connected: \(peripheral.name ?? "Unknown")")
         
         peripheral.delegate = self
-        peripheral.discoverServices([vehicleServiceUUID])
+        peripheral.discoverServices([vehicleServiceUUID, provisioningServiceUUID])
     }
     
     func centralManager(
@@ -134,6 +143,11 @@ final class BluetoothManager: NSObject,
                     [vehicleStateCharacteristicUUID],
                     for: service
                 )
+            } else if service.uuid == provisioningServiceUUID {
+                peripheral.discoverCharacteristics(
+                    [deviceIdentityCharacteristicUUID],
+                    for: service
+                )
             }
         }
     }
@@ -159,6 +173,8 @@ final class BluetoothManager: NSObject,
                 vehicleStateCharacteristic = characteristic
                 peripheral.readValue(for: characteristic)
                 peripheral.setNotifyValue(true, for: characteristic)
+            } else if characteristic.uuid == deviceIdentityCharacteristicUUID {
+                peripheral.readValue(for: characteristic)
             }
         }
     }
@@ -173,6 +189,18 @@ final class BluetoothManager: NSObject,
             return
         }
 
+        if characteristic.uuid == deviceIdentityCharacteristicUUID {
+            guard let data = characteristic.value,
+                  let payload = String(data: data, encoding: .utf8),
+                  let identity = DeviceIdentity(blePayload: payload) else {
+                return
+            }
+            
+            deviceIdentity = identity
+            print("Device identity: \(identity)")
+            return
+        }
+        
         guard characteristic.uuid == vehicleStateCharacteristicUUID,
               let data = characteristic.value,
               let payload = String(data: data, encoding: .utf8) else {

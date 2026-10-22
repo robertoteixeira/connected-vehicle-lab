@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 
+#include "BleProvisioningService.h"
 #include "BleVehicleService.h"
 #include "DebouncedButton.h"
 #include "VehicleState.h"
@@ -28,6 +29,8 @@ constexpr int SCREEN_HEIGHT = 64;
 constexpr int OLED_RESET_PIN = -1;
 constexpr uint8_t OLED_ADDRESS = 0x3C;
 
+DeviceIdentity deviceIdentity;
+BleProvisioningService bleProvisioningService;
 VehicleState vehicleState;
 DebouncedButton ignitionButton(IGNITION_BUTTON_PIN, BUTTON_DEBOUNCE_MS);
 DebouncedButton brakeButton(BRAKE_BUTTON_PIN, BUTTON_DEBOUNCE_MS);
@@ -157,7 +160,13 @@ void setup() {
     headlightButton.begin();
 
     Serial.begin(115200);
-    bleVehicleService.begin(vehicleState);
+
+    BLEDevice::init("ConnectedVehicle");
+    BLEServer* bleServer = BLEDevice::createServer();
+
+    bleVehicleService.begin(bleServer, vehicleState);
+    bleProvisioningService.begin(bleServer, deviceIdentity);
+
     Wire.begin(21, 22);
 
     if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) {
