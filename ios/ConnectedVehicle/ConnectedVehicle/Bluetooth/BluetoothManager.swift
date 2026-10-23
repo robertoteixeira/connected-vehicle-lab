@@ -17,6 +17,7 @@ final class BluetoothManager: NSObject,
     private var centralManager: CBCentralManager!
     private var vehiclePeripheral: CBPeripheral?
     private var vehicleStateCharacteristic: CBCharacteristic?
+    private var wifiConfigCharacteristic: CBCharacteristic?
     
     private let vehicleServiceUUID = CBUUID(
         string: "7B9F0001-6C5A-4E8F-9D3A-2F1B7C8E0001"
@@ -31,6 +32,10 @@ final class BluetoothManager: NSObject,
     
     private let deviceIdentityCharacteristicUUID = CBUUID(
         string: "7B9F0011-6C5A-4E8F-9D3A-2F1B7C8E0001"
+    )
+    
+    private let wifiConfigCharacteristicUUID = CBUUID(
+        string: "7B9F0012-6C5A-4E8F-9D3A-2F1B7C8E0001"
     )
     
     @Published private(set) var vehicleState = VehicleState()
@@ -145,7 +150,10 @@ final class BluetoothManager: NSObject,
                 )
             } else if service.uuid == provisioningServiceUUID {
                 peripheral.discoverCharacteristics(
-                    [deviceIdentityCharacteristicUUID],
+                    [
+                        deviceIdentityCharacteristicUUID,
+                        wifiConfigCharacteristicUUID
+                    ],
                     for: service
                 )
             }
@@ -175,6 +183,14 @@ final class BluetoothManager: NSObject,
                 peripheral.setNotifyValue(true, for: characteristic)
             } else if characteristic.uuid == deviceIdentityCharacteristicUUID {
                 peripheral.readValue(for: characteristic)
+            } else if characteristic.uuid == wifiConfigCharacteristicUUID {
+                wifiConfigCharacteristic = characteristic
+                print("Wi-Fi configuration characteristic ready")
+                
+                sendWifiConfiguration(
+                    ssid: "Dpto 1B",
+                    password: "tigoapsa1b"
+                )
             }
         }
     }
@@ -230,6 +246,26 @@ final class BluetoothManager: NSObject,
         print(
             "Notifications \(characteristic.isNotifying ? "enabled" : "disabled") " +
             "for \(characteristic.uuid)"
+        )
+    }
+    
+    func sendWifiConfiguration(ssid: String, password: String) {
+        guard let peripheral = vehiclePeripheral,
+              let characteristic = wifiConfigCharacteristic else {
+            print("Wi-Fi configuration characteristic unavailable")
+            return
+        }
+
+        let payload = "ssid=\(ssid),password=\(password)"
+
+        guard let data = payload.data(using: .utf8) else {
+            return
+        }
+
+        peripheral.writeValue(
+            data,
+            for: characteristic,
+            type: .withResponse
         )
     }
 }

@@ -10,6 +10,7 @@
             "includePath": [
                 "/Users/robertoteixeira/Dev/Projects/Personal/connected-vehicle-lab/firmware/include",
                 "/Users/robertoteixeira/Dev/Projects/Personal/connected-vehicle-lab/firmware/src",
+                "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src",
                 "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src",
                 "/Users/robertoteixeira/Dev/Projects/Personal/connected-vehicle-lab/firmware/.pio/libdeps/esp32dev/Adafruit SSD1306",
                 "/Users/robertoteixeira/Dev/Projects/Personal/connected-vehicle-lab/firmware/.pio/libdeps/esp32dev/Adafruit GFX Library",
@@ -239,7 +240,6 @@
                 "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/USB/src",
                 "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/Update/src",
                 "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/WebServer/src",
-                "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src",
                 "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/WiFiClientSecure/src",
                 "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/WiFiProv/src",
                 ""
@@ -249,6 +249,7 @@
                 "path": [
                     "/Users/robertoteixeira/Dev/Projects/Personal/connected-vehicle-lab/firmware/include",
                     "/Users/robertoteixeira/Dev/Projects/Personal/connected-vehicle-lab/firmware/src",
+                    "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src",
                     "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src",
                     "/Users/robertoteixeira/Dev/Projects/Personal/connected-vehicle-lab/firmware/.pio/libdeps/esp32dev/Adafruit SSD1306",
                     "/Users/robertoteixeira/Dev/Projects/Personal/connected-vehicle-lab/firmware/.pio/libdeps/esp32dev/Adafruit GFX Library",
@@ -478,7 +479,6 @@
                     "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/USB/src",
                     "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/Update/src",
                     "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/WebServer/src",
-                    "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src",
                     "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/WiFiClientSecure/src",
                     "/Users/robertoteixeira/.platformio/packages/framework-arduinoespressif32/libraries/WiFiProv/src",
                     ""
@@ -501,7 +501,7 @@
                 "ARDUINO=10812",
                 "ARDUINO_VARIANT=\"esp32\"",
                 "ARDUINO_BOARD=\"Espressif ESP32 Dev Module\"",
-                "ARDUINO_PARTITION_default",
+                "ARDUINO_PARTITION_huge_app",
                 ""
             ],
             "cStandard": "gnu99",

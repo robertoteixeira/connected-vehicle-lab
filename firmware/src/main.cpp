@@ -6,6 +6,7 @@
 #include "BleVehicleService.h"
 #include "DebouncedButton.h"
 #include "VehicleState.h"
+#include "WifiManager.h"
 
 constexpr uint8_t IGNITION_BUTTON_PIN = 27;
 constexpr uint8_t THROTTLE_PIN = 34;
@@ -37,6 +38,7 @@ DebouncedButton brakeButton(BRAKE_BUTTON_PIN, BUTTON_DEBOUNCE_MS);
 DebouncedButton headlightButton(HEADLIGHT_BUTTON_PIN, BUTTON_DEBOUNCE_MS);
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET_PIN);
 BleVehicleService bleVehicleService;
+WifiManager wifiManager;
 
 unsigned long lastSimulationUpdateMs = 0;
 unsigned long lastTelemetryMs = 0;
@@ -110,10 +112,10 @@ void updateVehicleSimulation(float deltaTimeSeconds) {
 }
 
 void printTelemetry() {
-    Serial.printf("Throttle: %.1f%%, RPM: %.0f, Speed: %.1f km/h, Brake: %s, Headlights: %s\n",
-                  vehicleState.throttlePosition, vehicleState.engineRpm, vehicleState.speedKph,
-                  vehicleState.brakePressed ? "ON" : "OFF",
-                  vehicleState.headlightsOn ? "ON" : "OFF");
+    // Serial.printf("Throttle: %.1f%%, RPM: %.0f, Speed: %.1f km/h, Brake: %s, Headlights: %s\n",
+    //               vehicleState.throttlePosition, vehicleState.engineRpm, vehicleState.speedKph,
+    //               vehicleState.brakePressed ? "ON" : "OFF",
+    //               vehicleState.headlightsOn ? "ON" : "OFF");
 }
 
 void scanI2cBus() {
@@ -165,7 +167,7 @@ void setup() {
     BLEServer* bleServer = BLEDevice::createServer();
 
     bleVehicleService.begin(bleServer, vehicleState);
-    bleProvisioningService.begin(bleServer, deviceIdentity);
+    bleProvisioningService.begin(bleServer, deviceIdentity, wifiManager);
 
     Wire.begin(21, 22);
 
@@ -186,6 +188,7 @@ void setup() {
 }
 
 void loop() {
+    wifiManager.update();
     ignitionButton.update();
     const bool buttonPressed = ignitionButton.isPressed();
     brakeButton.update();
