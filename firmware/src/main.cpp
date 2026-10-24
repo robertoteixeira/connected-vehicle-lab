@@ -162,6 +162,7 @@ void setup() {
     headlightButton.begin();
 
     Serial.begin(115200);
+    wifiManager.begin();
 
     BLEDevice::init("ConnectedVehicle");
     BLEServer* bleServer = BLEDevice::createServer();

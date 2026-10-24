@@ -2,24 +2,59 @@
 
 #include <WiFi.h>
 
-void WifiManager::connect(const char* ssid, const char* password) {
-    pendingSsid_ = ssid;
-    pendingPassword_ = password;
-    connectionRequested_ = true;
+#include <cstring>
 
-    Serial.printf("Wi-Fi connection requested for SSID: %s\n", pendingSsid_.c_str());
+void WifiManager::begin() {
+    connectionQueue_ = xQueueCreate(1, sizeof(ConnectionRequest));
+
+    if (connectionQueue_ == nullptr) {
+        Serial.println("Failed to create Wi-Fi connection queue");
+    }
+}
+
+void WifiManager::connect(const char* ssid, const char* password) {
+    if (connectionQueue_ == nullptr) {
+        Serial.println("Wi-Fi connection queue unavailable");
+        return;
+    }
+
+    if (ssid == nullptr || password == nullptr) {
+        Serial.println("Missing Wi-Fi credentials");
+        return;
+    }
+
+    ConnectionRequest request{};
+
+    const size_t ssidLength = strlen(ssid);
+    const size_t passwordLength = strlen(password);
+
+    if (ssidLength == 0 || ssidLength >= sizeof(request.ssid) ||
+        passwordLength >= sizeof(request.password)) {
+        Serial.println("Invalid Wi-Fi credential length");
+        return;
+    }
+
+    memcpy(request.ssid, ssid, ssidLength);
+    memcpy(request.password, password, passwordLength);
+
+    if (xQueueOverwrite(connectionQueue_, &request) != pdPASS) {
+        Serial.println("Failed to queue Wi-Fi connection request");
+        return;
+    }
+
+    Serial.printf("Wi-Fi connection requested for SSID: %s\n", request.ssid);
 }
 
 void WifiManager::update() {
-    if (connectionRequested_) {
-        connectionRequested_ = false;
+    ConnectionRequest request{};
 
+    if (connectionQueue_ != nullptr && xQueueReceive(connectionQueue_, &request, 0) == pdPASS) {
         WiFi.mode(WIFI_STA);
-        WiFi.begin(pendingSsid_.c_str(), pendingPassword_.c_str());
+        WiFi.begin(request.ssid, request.password);
 
         connecting_ = true;
 
-        Serial.printf("Connecting to Wi-Fi: %s\n", pendingSsid_.c_str());
+        Serial.printf("Connecting to Wi-Fi: %s\n", request.ssid);
 
         return;
     }

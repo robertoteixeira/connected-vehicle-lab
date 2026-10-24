@@ -1,16 +1,21 @@
 #pragma once
 
 #include <Arduino.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/queue.h>
 
 class WifiManager {
    public:
+    void begin();
     void connect(const char* ssid, const char* password);
     void update();
 
    private:
-    volatile bool connectionRequested_ = false;
-    bool connecting_ = false;
+    struct ConnectionRequest {
+        char ssid[33];
+        char password[65];
+    };
 
-    String pendingSsid_;
-    String pendingPassword_;
+    QueueHandle_t connectionQueue_ = nullptr;
+    bool connecting_ = false;
 };
