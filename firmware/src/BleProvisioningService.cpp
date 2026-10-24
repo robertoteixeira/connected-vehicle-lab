@@ -38,7 +38,7 @@ class WifiConfigCallbacks : public BLECharacteristicCallbacks {
     }
 
    private:
-    WifiManager wifiManager_;
+    WifiManager& wifiManager_;
 };
 
 void BleProvisioningService::begin(BLEServer* server, const DeviceIdentity& identity,
