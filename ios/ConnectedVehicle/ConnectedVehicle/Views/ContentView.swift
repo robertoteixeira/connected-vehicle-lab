@@ -18,12 +18,12 @@ struct ContentView: View {
             Label(
                 bluetoothManager.isConnected ? "Connected" : "Disconnected",
                 systemImage: bluetoothManager.isConnected
-                ? "checkmark.circle.full"
+                ? "checkmark.circle.fill"
                 : "exclamationmark.circle"
             )
             .foregroundStyle(bluetoothManager.isConnected ? Color.green : Color.secondary)
             
-            if bluetoothManager.isConnected {
+            if bluetoothManager.isConnected && bluetoothManager.hasReceivedTelemetry {
                 Text("Speed: \(bluetoothManager.vehicleState.speedKph, specifier: "%.1f") km/h")
                 Text("RPM: \(bluetoothManager.vehicleState.engineRpm, specifier: "%.0f")")
                 Text("Throttle: \(bluetoothManager.vehicleState.throttlePosition, specifier: "%.1f")%")
@@ -31,6 +31,8 @@ struct ContentView: View {
                 Text("Ignition: \(bluetoothManager.vehicleState.ignitionOn ? "ON" : "OFF")")
                 Text("Brake: \(bluetoothManager.vehicleState.brakePressed ? "ON" : "OFF")")
                 Text("Headlights: \(bluetoothManager.vehicleState.headlightsOn ? "ON" : "OFF")")
+            } else if bluetoothManager.isConnected {
+                ProgressView("Waiting for vehicle telemetry")
             } else {
                 Text("Vehicle telemetry is unavailable.")
                     .foregroundStyle(.secondary)

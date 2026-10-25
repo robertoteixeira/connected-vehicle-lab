@@ -41,6 +41,7 @@ final class BluetoothManager: NSObject,
     @Published private(set) var vehicleState = VehicleState()
     @Published private(set) var isConnected = false
     @Published private(set) var deviceIdentity: DeviceIdentity?
+    @Published private(set) var hasReceivedTelemetry = false
     
     override init() {
         super.init()
@@ -88,6 +89,7 @@ final class BluetoothManager: NSObject,
         _ central: CBCentralManager,
         didConnect peripheral: CBPeripheral
     ) {
+        hasReceivedTelemetry = false
         isConnected = true
         
         print("Connected: \(peripheral.name ?? "Unknown")")
@@ -102,6 +104,7 @@ final class BluetoothManager: NSObject,
         error: Error?
     ) {
         isConnected = false
+        hasReceivedTelemetry = false
         
         if let error {
             print("Connection failed: \(error)")
@@ -123,6 +126,7 @@ final class BluetoothManager: NSObject,
         error: (any Error)?
     ) {
         isConnected = false
+        hasReceivedTelemetry = false
         
         if let error {
             print("Disconnected with error: \(error)")
@@ -239,6 +243,7 @@ final class BluetoothManager: NSObject,
         }
         
         vehicleState = state
+        hasReceivedTelemetry = true
 
         print("Vehicle state: \(state)")
     }
