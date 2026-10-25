@@ -18,4 +18,5 @@ class WifiManager {
 
     QueueHandle_t connectionQueue_ = nullptr;
     bool connecting_ = false;
+    unsigned long connectionStartedMs_ = 0;
 };

@@ -4,6 +4,8 @@
 
 #include <cstring>
 
+constexpr unsigned long WIFI_CONNECTION_TIMEOUT_MS = 15000;
+
 void WifiManager::begin() {
     connectionQueue_ = xQueueCreate(1, sizeof(ConnectionRequest));
 
@@ -53,6 +55,7 @@ void WifiManager::update() {
         WiFi.begin(request.ssid, request.password);
 
         connecting_ = true;
+        connectionStartedMs_ = millis();
 
         Serial.printf("Connecting to Wi-Fi: %s\n", request.ssid);
 
@@ -70,6 +73,15 @@ void WifiManager::update() {
         connecting_ = false;
 
         Serial.printf("Wi-Fi connected. IP: %s\n", WiFi.localIP().toString().c_str());
+
+        return;
+    }
+
+    if (now - connectionStartedMs_ >= WIFI_CONNECTION_TIMEOUT_MS) {
+        connecting_ = false;
+        WiFi.disconnect();
+
+        Serial.println("Wi-Fi connection timed out");
 
         return;
     }
