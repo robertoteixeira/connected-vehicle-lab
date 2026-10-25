@@ -98,6 +98,27 @@ final class BluetoothManager: NSObject,
     
     func centralManager(
         _ central: CBCentralManager,
+        didFailToConnect peripheral: CBPeripheral,
+        error: Error?
+    ) {
+        isConnected = false
+        
+        if let error {
+            print("Connection failed: \(error)")
+        } else {
+            print("Connection failed: \(peripheral.name ?? "Unknown")")
+        }
+        
+        vehiclePeripheral = nil
+        vehicleStateCharacteristic = nil
+        wifiConfigCharacteristic = nil
+        deviceIdentity = nil
+        
+        scheduleScanRetry()
+    }
+    
+    func centralManager(
+        _ central: CBCentralManager,
         didDisconnectPeripheral peripheral: CBPeripheral,
         error: (any Error)?
     ) {
@@ -111,21 +132,10 @@ final class BluetoothManager: NSObject,
         
         vehiclePeripheral = nil
         vehicleStateCharacteristic = nil
+        wifiConfigCharacteristic = nil
+        deviceIdentity = nil
         
-        Task { [weak self] in
-            try? await Task.sleep(for: .seconds(2))
-            
-            guard let self,
-                  self.centralManager.state == .poweredOn,
-                  !self.isConnected else {
-                return
-            }
-            
-            self.centralManager.scanForPeripherals(
-                withServices: [self.vehicleServiceUUID],
-                options: nil
-            )
-        }
+        scheduleScanRetry()
     }
     
     func peripheral(
@@ -267,5 +277,21 @@ final class BluetoothManager: NSObject,
             for: characteristic,
             type: .withResponse
         )
+    }
+    
+    private func scheduleScanRetry() {
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(2))
+            
+            guard let self,
+                  self.centralManager.state == .poweredOn,
+                  self.vehiclePeripheral == nil else {
+                return
+            }
+            
+            print("Retrying BLE scan")
+            
+            self.centralManager.scanForPeripherals(withServices: [self.vehicleServiceUUID], options: nil)
+        }
     }
 }
