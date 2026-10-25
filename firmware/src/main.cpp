@@ -156,6 +156,18 @@ void updateDisplay() {
     display.display();
 }
 
+class VehicleServerCallbacks : public BLEServerCallbacks {
+   public:
+    void onConnect(BLEServer* server) override { Serial.println("BLE client connected"); }
+    void onDisconnect(BLEServer* server) override {
+        Serial.println("BLE client disconnected");
+
+        server->startAdvertising();
+
+        Serial.println("BLE advertising restart requested");
+    }
+};
+
 void setup() {
     ignitionButton.begin();
     brakeButton.begin();
@@ -166,6 +178,7 @@ void setup() {
 
     BLEDevice::init("ConnectedVehicle");
     BLEServer* bleServer = BLEDevice::createServer();
+    bleServer->setCallbacks(new VehicleServerCallbacks());
 
     bleVehicleService.begin(bleServer, vehicleState);
     bleProvisioningService.begin(bleServer, deviceIdentity, wifiManager);
