@@ -9,30 +9,42 @@ import XCTest
 @testable import ConnectedVehicle
 
 final class ConnectedVehicleTests: XCTestCase {
+    private let validPayload =
+        "ign=1,speed=42.5,rpm=2500,thr=30.0,brk=0,lgt=1"
 
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+    func testParsesValidVehicleState() throws {
+        let state = try XCTUnwrap(
+            VehicleState(blePayload: validPayload)
+        )
+
+        XCTAssertTrue(state.ignitionOn)
+        XCTAssertEqual(state.speedKph, 42.5)
+        XCTAssertEqual(state.engineRpm, 2500)
+        XCTAssertEqual(state.throttlePosition, 30)
+        XCTAssertFalse(state.brakePressed)
+        XCTAssertTrue(state.headlightsOn)
     }
 
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+    func testRejectsDuplicateFields() {
+        XCTAssertNil(
+            VehicleState(blePayload: validPayload + ",speed=99")
+        )
     }
 
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
-        // XCTest Documentation
-        // https://developer.apple.com/documentation/xctest
-    }
-
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
+    func testRejectsMalformedFields() {
+        for suffix in [",broken", ",", ",=value", ",extra="] {
+            XCTAssertNil(
+                VehicleState(blePayload: validPayload + suffix),
+                "Expected rejection for suffix: \(suffix)"
+            )
         }
     }
 
+    func testRejectsMissingRequiredField() {
+        XCTAssertNil(
+            VehicleState(
+                blePayload: "ign=1,speed=42.5,rpm=2500,thr=30.0,brk=0"
+            )
+        )
+    }
 }

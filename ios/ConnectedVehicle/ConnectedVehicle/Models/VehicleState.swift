@@ -17,17 +17,32 @@ struct VehicleState: Equatable {
     init() {}
     
     init?(blePayload: String) {
-        let value = Dictionary(
-            uniqueKeysWithValues: blePayload
-                .split(separator: ",")
-                .compactMap { component -> (String, String)? in
-                    let parts = component.split(separator: "=", maxSplits: 1)
-                    
-                    guard parts.count == 2 else { return nil }
-                    
-                    return (String(parts[0]), String(parts[1]))
-                }
-        )
+        var value: [String: String] = [:]
+
+        for component in blePayload.split(
+            separator: ",",
+            omittingEmptySubsequences: false
+        ) {
+            let parts = component.split(
+                separator: "=",
+                maxSplits: 1,
+                omittingEmptySubsequences: false
+            )
+
+            guard parts.count == 2,
+                  !parts[0].isEmpty,
+                  !parts[1].isEmpty else {
+                return nil
+            }
+
+            let key = String(parts[0])
+
+            guard value[key] == nil else {
+                return nil
+            }
+
+            value[key] = String(parts[1])
+        }
         
         guard
             let ignition = value["ign"],
