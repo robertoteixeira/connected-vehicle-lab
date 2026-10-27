@@ -23,6 +23,28 @@ struct ContentView: View {
             )
             .foregroundStyle(bluetoothManager.isConnected ? Color.green : Color.secondary)
             
+            if bluetoothManager.isConnected {
+                if let identity = bluetoothManager.deviceIdentity {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Device")
+                            .font(.headline)
+                        
+                        LabeledContent("ID", value: identity.deviceId)
+                        LabeledContent("Hardware", value: identity.hardwareVersion)
+                        LabeledContent("Firmware ", value: identity.firmwareVersion)
+                    }
+                    .padding()
+                    .background(
+                        Color.secondary.opacity(0.08),
+                        in: RoundedRectangle(cornerRadius: 12)
+                    )
+                } else {
+                    Text("Device identity unavailable")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            
             if bluetoothManager.isConnected && bluetoothManager.hasReceivedTelemetry {
                 Text("Speed: \(bluetoothManager.vehicleState.speedKph, specifier: "%.1f") km/h")
                 Text("RPM: \(bluetoothManager.vehicleState.engineRpm, specifier: "%.0f")")
