@@ -62,6 +62,15 @@ struct VehicleState: Equatable {
             return nil
         }
         
+        guard speedKph.isFinite,
+              engineRpm.isFinite,
+              throttlePosition.isFinite,
+              (0...180).contains(speedKph),
+              (0...6000).contains(engineRpm),
+              (0...100).contains(throttlePosition) else {
+            return nil
+        }
+        
         ignitionOn = ignition == "1"
         brakePressed = brake == "1"
         headlightsOn = headlights == "1"
