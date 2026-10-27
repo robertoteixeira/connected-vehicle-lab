@@ -22,6 +22,7 @@ final class BluetoothManager: NSObject,
     private let vehicleServiceUUID = CBUUID(
         string: "7B9F0001-6C5A-4E8F-9D3A-2F1B7C8E0001"
     )
+
     private let vehicleStateCharacteristicUUID = CBUUID(
         string: "7B9F0002-6C5A-4E8F-9D3A-2F1B7C8E0001"
     )
@@ -42,6 +43,7 @@ final class BluetoothManager: NSObject,
     @Published private(set) var isConnected = false
     @Published private(set) var deviceIdentity: DeviceIdentity?
     @Published private(set) var hasReceivedTelemetry = false
+    @Published private(set) var canConfigureWifi = false
     
     override init() {
         super.init()
@@ -191,12 +193,9 @@ final class BluetoothManager: NSObject,
                 peripheral.readValue(for: characteristic)
             } else if characteristic.uuid == wifiConfigCharacteristicUUID {
                 wifiConfigCharacteristic = characteristic
-                print("Wi-Fi configuration characteristic ready")
+                canConfigureWifi = true
                 
-                sendWifiConfiguration(
-                    ssid: "Dpto 1B",
-                    password: "tigoapsa1b"
-                )
+                print("Wi-Fi configuration characteristic ready")
             }
         }
     }
@@ -294,9 +293,10 @@ final class BluetoothManager: NSObject,
     
     private func clearConnectionState() {
         isConnected = false
+        canConfigureWifi = false
         hasReceivedTelemetry = false
         deviceIdentity = nil
-        
+                
         vehiclePeripheral = nil
         vehicleStateCharacteristic = nil
         wifiConfigCharacteristic = nil
