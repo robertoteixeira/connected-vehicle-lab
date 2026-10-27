@@ -49,6 +49,10 @@ final class BluetoothManager: NSObject,
     }
     
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        if central.state != .poweredOn {
+            clearConnectionState()
+        }
+        
         switch central.state {
         case .poweredOn:
             print("BLE powered on")
@@ -103,20 +107,14 @@ final class BluetoothManager: NSObject,
         didFailToConnect peripheral: CBPeripheral,
         error: Error?
     ) {
-        isConnected = false
-        hasReceivedTelemetry = false
+        clearConnectionState()
         
         if let error {
             print("Connection failed: \(error)")
         } else {
             print("Connection failed: \(peripheral.name ?? "Unknown")")
         }
-        
-        vehiclePeripheral = nil
-        vehicleStateCharacteristic = nil
-        wifiConfigCharacteristic = nil
-        deviceIdentity = nil
-        
+                
         scheduleScanRetry()
     }
     
@@ -125,19 +123,13 @@ final class BluetoothManager: NSObject,
         didDisconnectPeripheral peripheral: CBPeripheral,
         error: (any Error)?
     ) {
-        isConnected = false
-        hasReceivedTelemetry = false
+        clearConnectionState()
         
         if let error {
             print("Disconnected with error: \(error)")
         } else {
             print("Disconnected: \(peripheral.name ?? "Unknown")")
         }
-        
-        vehiclePeripheral = nil
-        vehicleStateCharacteristic = nil
-        wifiConfigCharacteristic = nil
-        deviceIdentity = nil
         
         scheduleScanRetry()
     }
@@ -298,5 +290,15 @@ final class BluetoothManager: NSObject,
             
             self.centralManager.scanForPeripherals(withServices: [self.vehicleServiceUUID], options: nil)
         }
+    }
+    
+    private func clearConnectionState() {
+        isConnected = false
+        hasReceivedTelemetry = false
+        deviceIdentity = nil
+        
+        vehiclePeripheral = nil
+        vehicleStateCharacteristic = nil
+        wifiConfigCharacteristic = nil
     }
 }
