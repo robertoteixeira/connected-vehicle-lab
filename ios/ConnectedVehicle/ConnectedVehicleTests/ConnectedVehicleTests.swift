@@ -47,4 +47,47 @@ final class ConnectedVehicleTests: XCTestCase {
             )
         )
     }
+    
+    func testRejectsInvalidBooleanValues() {
+        for field in ["ign", "brk", "lgt"] {
+            for invalidValue in ["2", "-1", "true", "yes"] {
+                let ignition = field == "ign" ? invalidValue : "1"
+                let brake = field == "brk" ? invalidValue : "0"
+                let headlights = field == "lgt" ? invalidValue : "1"
+
+                let payload =
+                    "ign=\(ignition),speed=42.5,rpm=2500," +
+                    "thr=30.0,brk=\(brake),lgt=\(headlights)"
+
+                XCTAssertNil(
+                    VehicleState(blePayload: payload),
+                    "Expected rejection for \(field)=\(invalidValue)"
+                )
+            }
+        }
+    }
+
+    func testAcceptsAllBooleanValuesOff() throws {
+        let state = try XCTUnwrap(
+            VehicleState(
+                blePayload: "ign=0,speed=0,rpm=0,thr=0,brk=0,lgt=0"
+            )
+        )
+
+        XCTAssertFalse(state.ignitionOn)
+        XCTAssertFalse(state.brakePressed)
+        XCTAssertFalse(state.headlightsOn)
+    }
+
+    func testAcceptsAllBooleanValuesOn() throws {
+        let state = try XCTUnwrap(
+            VehicleState(
+                blePayload: "ign=1,speed=0,rpm=800,thr=0,brk=1,lgt=1"
+            )
+        )
+
+        XCTAssertTrue(state.ignitionOn)
+        XCTAssertTrue(state.brakePressed)
+        XCTAssertTrue(state.headlightsOn)
+    }
 }

@@ -56,6 +56,12 @@ struct VehicleState: Equatable {
             let throttlePosition = Float(throttle)
         else { return nil }
         
+        guard ignition == "0" || ignition == "1",
+              brake == "0" || brake == "1",
+              headlights == "0" || headlights == "1" else {
+            return nil
+        }
+        
         ignitionOn = ignition == "1"
         brakePressed = brake == "1"
         headlightsOn = headlights == "1"
