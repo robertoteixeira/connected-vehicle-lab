@@ -134,4 +134,54 @@ final class ConnectedVehicleTests: XCTestCase {
             XCTAssertEqual(state.throttlePosition, Float(throttle))
         }
     }
+    
+    func testParsesValidDeviceIdentity() throws {
+        let identity = try XCTUnwrap(
+            DeviceIdentity(
+                blePayload: "id=VEH-001,hw=ESP32-DEVKIT-V1,fw=0.1.0"
+            )
+        )
+
+        XCTAssertEqual(identity.deviceId, "VEH-001")
+        XCTAssertEqual(identity.hardwareVersion, "ESP32-DEVKIT-V1")
+        XCTAssertEqual(identity.firmwareVersion, "0.1.0")
+    }
+
+    func testRejectsDuplicateIdentityFields() {
+        let payload = "id=VEH-001,hw=ESP32-DEVKIT-V1,fw=0.1.0"
+
+        for duplicate in ["id=VEH-002", "hw=OTHER", "fw=0.2.0"] {
+            XCTAssertNil(
+                DeviceIdentity(blePayload: payload + "," + duplicate),
+                "Expected rejection for duplicate: \(duplicate)"
+            )
+        }
+    }
+
+    func testRejectsMalformedIdentityFields() {
+        let payload = "id=VEH-001,hw=ESP32-DEVKIT-V1,fw=0.1.0"
+
+        for suffix in [",broken", ",", ",=value", ",extra="] {
+            XCTAssertNil(
+                DeviceIdentity(blePayload: payload + suffix),
+                "Expected rejection for suffix: \(suffix)"
+            )
+        }
+    }
+
+    func testRejectsMissingOrEmptyIdentityFields() {
+        for payload in [
+            "hw=ESP32-DEVKIT-V1,fw=0.1.0",
+            "id=VEH-001,fw=0.1.0",
+            "id=VEH-001,hw=ESP32-DEVKIT-V1",
+            "id=,hw=ESP32-DEVKIT-V1,fw=0.1.0",
+            "id=VEH-001,hw=,fw=0.1.0",
+            "id=VEH-001,hw=ESP32-DEVKIT-V1,fw="
+        ] {
+            XCTAssertNil(
+                DeviceIdentity(blePayload: payload),
+                "Expected rejection for payload: \(payload)"
+            )
+        }
+    }
 }

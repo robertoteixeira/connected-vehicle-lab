@@ -11,19 +11,32 @@ struct DeviceIdentity: Equatable {
     let firmwareVersion: String
 
     init?(blePayload: String) {
-        let values = Dictionary(
-            uniqueKeysWithValues: blePayload
-                .split(separator: ",")
-                .compactMap { component -> (String, String)? in
-                    let parts = component.split(separator: "=", maxSplits: 1)
+        var values: [String: String] = [:]
 
-                    guard parts.count == 2 else {
-                        return nil
-                    }
+        for component in blePayload.split(
+            separator: ",",
+            omittingEmptySubsequences: false
+        ) {
+            let parts = component.split(
+                separator: "=",
+                maxSplits: 1,
+                omittingEmptySubsequences: false
+            )
 
-                    return (String(parts[0]), String(parts[1]))
-                }
-        )
+            guard parts.count == 2,
+                  !parts[0].isEmpty,
+                  !parts[1].isEmpty else {
+                return nil
+            }
+
+            let key = String(parts[0])
+
+            guard values[key] == nil else {
+                return nil
+            }
+
+            values[key] = String(parts[1])
+        }
 
         guard
             let deviceId = values["id"],
