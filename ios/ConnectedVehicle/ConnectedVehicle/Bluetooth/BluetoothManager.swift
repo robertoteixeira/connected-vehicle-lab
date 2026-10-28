@@ -44,6 +44,8 @@ final class BluetoothManager: NSObject,
     @Published private(set) var deviceIdentity: DeviceIdentity?
     @Published private(set) var hasReceivedTelemetry = false
     @Published private(set) var canConfigureWifi = false
+    @Published private(set) var isSendingWifiConfiguration = false
+    @Published private(set) var wifiWriteMessage: String?
     
     override init() {
         super.init()
@@ -255,18 +257,52 @@ final class BluetoothManager: NSObject,
         )
     }
     
+    func peripheral(
+        _ peripheral: CBPeripheral,
+        didWriteValueFor characteristic: CBCharacteristic,
+        error: Error?
+    ) {
+        guard peripheral === vehiclePeripheral,
+              characteristic.uuid == wifiConfigCharacteristicUUID,
+              isSendingWifiConfiguration else {
+            return
+        }
+
+        isSendingWifiConfiguration = false
+
+        if let error {
+            wifiWriteMessage = "Could not send credentials. Please try again."
+            print("Wi-Fi configuration write failed: \(error)")
+        } else {
+            wifiWriteMessage =
+                "Bluetooth write acknowledged. Check the device log for the Wi-Fi result."
+        }
+    }
+    
     func sendWifiConfiguration(ssid: String, password: String) {
-        guard let peripheral = vehiclePeripheral,
+        guard !isSendingWifiConfiguration else {
+            return
+        }
+
+        guard isConnected,
+              let peripheral = vehiclePeripheral,
               let characteristic = wifiConfigCharacteristic else {
-            print("Wi-Fi configuration characteristic unavailable")
+            wifiWriteMessage = "Wi-Fi configuration is unavailable."
             return
         }
 
         let payload = "ssid=\(ssid),password=\(password)"
+        let data = Data(payload.utf8)
 
-        guard let data = payload.data(using: .utf8) else {
+        guard data.count <= peripheral.maximumWriteValueLength(
+            for: .withResponse
+        ) else {
+            wifiWriteMessage = "Credentials exceed the Bluetooth write limit."
             return
         }
+
+        wifiWriteMessage = nil
+        isSendingWifiConfiguration = true
 
         peripheral.writeValue(
             data,
@@ -300,5 +336,7 @@ final class BluetoothManager: NSObject,
         vehiclePeripheral = nil
         vehicleStateCharacteristic = nil
         wifiConfigCharacteristic = nil
+        isSendingWifiConfiguration = false
+        wifiWriteMessage = nil
     }
 }

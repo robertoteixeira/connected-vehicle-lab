@@ -14,6 +14,7 @@ struct ContentView: View {
     
     private var canSubmitWifi: Bool {
         bluetoothManager.canConfigureWifi &&
+        !bluetoothManager.isSendingWifiConfiguration &&
         !wifiSSID.isEmpty &&
         wifiSSID.utf8.count <= 32 &&
         wifiPassword.utf8.count <= 64 &&
@@ -97,9 +98,15 @@ struct ContentView: View {
                         .buttonStyle(.borderedProminent)
                         .disabled(!canSubmitWifi)
                         
-                        Text("Check the device serial log for the connection result.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
+                        if bluetoothManager.isSendingWifiConfiguration {
+                            ProgressView("Sending credentials…")
+                        }
+
+                        if let message = bluetoothManager.wifiWriteMessage {
+                            Text(message)
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
             }
