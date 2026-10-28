@@ -4,11 +4,14 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 
+enum class WifiProvisioningState { Idle, Connecting, Connected, TimedOut };
+
 class WifiManager {
    public:
     void begin();
     void connect(const char* ssid, const char* password);
     void update();
+    WifiProvisioningState provisioningState() const;
 
    private:
     struct ConnectionRequest {
@@ -17,6 +20,6 @@ class WifiManager {
     };
 
     QueueHandle_t connectionQueue_ = nullptr;
-    bool connecting_ = false;
+    WifiProvisioningState provisioningState_ = WifiProvisioningState::Idle;
     unsigned long connectionStartedMs_ = 0;
 };

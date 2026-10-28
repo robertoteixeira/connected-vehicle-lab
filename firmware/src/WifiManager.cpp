@@ -47,6 +47,8 @@ void WifiManager::connect(const char* ssid, const char* password) {
     Serial.printf("Wi-Fi connection requested for SSID: %s\n", request.ssid);
 }
 
+WifiProvisioningState WifiManager::provisioningState() const { return provisioningState_; }
+
 void WifiManager::update() {
     ConnectionRequest request{};
 
@@ -54,7 +56,7 @@ void WifiManager::update() {
         WiFi.mode(WIFI_STA);
         WiFi.begin(request.ssid, request.password);
 
-        connecting_ = true;
+        provisioningState_ = WifiProvisioningState::Connecting;
         connectionStartedMs_ = millis();
 
         Serial.printf("Connecting to Wi-Fi: %s\n", request.ssid);
@@ -62,7 +64,7 @@ void WifiManager::update() {
         return;
     }
 
-    if (!connecting_) {
+    if (provisioningState_ != WifiProvisioningState::Connecting) {
         return;
     }
 
@@ -70,7 +72,7 @@ void WifiManager::update() {
     const unsigned long now = millis();
 
     if (WiFi.status() == WL_CONNECTED) {
-        connecting_ = false;
+        provisioningState_ = WifiProvisioningState::Connected;
 
         Serial.printf("Wi-Fi connected. IP: %s\n", WiFi.localIP().toString().c_str());
 
@@ -78,7 +80,7 @@ void WifiManager::update() {
     }
 
     if (now - connectionStartedMs_ >= WIFI_CONNECTION_TIMEOUT_MS) {
-        connecting_ = false;
+        provisioningState_ = WifiProvisioningState::TimedOut;
         WiFi.disconnect();
 
         Serial.println("Wi-Fi connection timed out");
