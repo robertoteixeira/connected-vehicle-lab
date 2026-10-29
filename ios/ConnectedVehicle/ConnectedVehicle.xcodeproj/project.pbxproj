@@ -400,6 +400,7 @@
 				DEVELOPMENT_TEAM = QUFDSU77H7;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Vehicle Lab";
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Connected Vehicle uses Bluetooth to discover, connect to, and communicate with nearby vehicle devices.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -434,6 +435,7 @@
 				DEVELOPMENT_TEAM = QUFDSU77H7;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Vehicle Lab";
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Connected Vehicle uses Bluetooth to discover, connect to, and communicate with nearby vehicle devices.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
