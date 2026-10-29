@@ -8,8 +8,11 @@
 class BleProvisioningService {
    public:
     void begin(BLEServer* server, const DeviceIdentity& identity, WifiManager& wifiManager);
+    void update(WifiProvisioningState state);
 
    private:
     BLECharacteristic* deviceIdentityCharacteristic_ = nullptr;
     BLECharacteristic* wifiConfigCharacteristic_ = nullptr;
+    BLECharacteristic* wifiStatusCharacteristic_ = nullptr;
+    WifiProvisioningState lastWifiState_ = WifiProvisioningState::Idle;
 };

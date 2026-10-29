@@ -1,10 +1,12 @@
 #include "BleProvisioningService.h"
 
 #include <Arduino.h>
+#include <BLE2902.h>
 
 constexpr char PROVISIONING_SERVICE_UUID[] = "7b9f0010-6c5a-4e8f-9d3a-2f1b7c8e0001";
 constexpr char DEVICE_IDENTITY_CHARACTERISTIC_UUID[] = "7b9f0011-6c5a-4e8f-9d3a-2f1b7c8e0001";
 constexpr char WIFI_CONFIG_CHARACTERISTIC_UUID[] = "7b9f0012-6c5a-4e8f-9d3a-2f1b7c8e0001";
+constexpr char WIFI_STATUS_CHARACTERISTIC_UUID[] = "7b9f0013-6c5a-4e8f-9d3a-2f1b7c8e0001";
 
 class WifiConfigCallbacks : public BLECharacteristicCallbacks {
    public:
@@ -47,8 +49,10 @@ void BleProvisioningService::begin(BLEServer* server, const DeviceIdentity& iden
 
     deviceIdentityCharacteristic_ = provisioningService->createCharacteristic(
         DEVICE_IDENTITY_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ);
+
     wifiConfigCharacteristic_ = provisioningService->createCharacteristic(
         WIFI_CONFIG_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_WRITE);
+
     wifiConfigCharacteristic_->setCallbacks(new WifiConfigCallbacks(wifiManager));
 
     char payload[128];
@@ -58,5 +62,46 @@ void BleProvisioningService::begin(BLEServer* server, const DeviceIdentity& iden
 
     deviceIdentityCharacteristic_->setValue(payload);
 
+    wifiStatusCharacteristic_ = provisioningService->createCharacteristic(
+        WIFI_STATUS_CHARACTERISTIC_UUID,
+        BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
+
+    wifiStatusCharacteristic_->addDescriptor(new BLE2902());
+    wifiStatusCharacteristic_->setValue("idle");
+
     provisioningService->start();
+}
+
+void BleProvisioningService::update(WifiProvisioningState state) {
+    if (wifiStatusCharacteristic_ == nullptr || state == lastWifiState_) {
+        return;
+    }
+
+    const char* payload = nullptr;
+
+    switch (state) {
+        case WifiProvisioningState::Idle:
+            payload = "idle";
+            break;
+        case WifiProvisioningState::Connecting:
+            payload = "connecting";
+            break;
+        case WifiProvisioningState::Connected:
+            payload = "connected";
+            break;
+        case WifiProvisioningState::TimedOut:
+            payload = "timed_out";
+            break;
+    }
+
+    if (payload == nullptr) {
+        return;
+    }
+
+    wifiStatusCharacteristic_->setValue(payload);
+    wifiStatusCharacteristic_->notify();
+
+    lastWifiState_ = state;
+
+    Serial.printf("Wi-Fi provisioning status: %s\n", payload);
 }

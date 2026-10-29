@@ -203,6 +203,8 @@ void setup() {
 
 void loop() {
     wifiManager.update();
+    bleProvisioningService.update(wifiManager.provisioningState());
+
     ignitionButton.update();
     const bool buttonPressed = ignitionButton.isPressed();
     brakeButton.update();
