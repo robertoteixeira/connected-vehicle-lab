@@ -303,7 +303,7 @@ final class BluetoothManager: NSObject,
             print("Wi-Fi configuration write failed: \(error)")
         } else {
             wifiWriteMessage =
-                "Bluetooth write acknowledged. Check the device log for the Wi-Fi result."
+                "Bluetooth write acknowledged."
         }
     }
     

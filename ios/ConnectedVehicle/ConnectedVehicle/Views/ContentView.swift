@@ -107,6 +107,39 @@ struct ContentView: View {
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                         }
+                        
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Device Wi-Fi setup")
+                                .font(.subheadline)
+                                .bold()
+                            
+                            switch bluetoothManager.wifiProvisioningState {
+                            case .idle:
+                                Text("No connection attempt started.")
+                                
+                            case .connecting:
+                                ProgressView("Connecting to Wi-Fi...")
+                                
+                            case .connected:
+                                Label(
+                                    "Last connection attempt succeeded",
+                                    systemImage: "exclamationmark.triangle"
+                                )
+                                .foregroundStyle(.green)
+                                
+                            case .timedOut:
+                                Label(
+                                    "Connection timed out. Check the network details and try again.",
+                                    systemImage: "exclamationmark.triangle"
+                                )
+                                .foregroundStyle(.orange)
+                                
+                            case nil:
+                                Text("Wi-Fi setup status unavailable.")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .font(.footnote)
                     }
                 }
             }
