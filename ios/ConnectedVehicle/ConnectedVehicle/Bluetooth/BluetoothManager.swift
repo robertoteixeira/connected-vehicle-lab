@@ -39,6 +39,10 @@ final class BluetoothManager: NSObject,
         string: "7B9F0012-6C5A-4E8F-9D3A-2F1B7C8E0001"
     )
     
+    private let wifiStatusCharacteristicUUID = CBUUID(
+        string: "7B9F0013-6C5A-4E8F-9D3A-2F1B7C8E0001"
+    )
+    
     @Published private(set) var vehicleState = VehicleState()
     @Published private(set) var isConnected = false
     @Published private(set) var deviceIdentity: DeviceIdentity?
@@ -46,6 +50,7 @@ final class BluetoothManager: NSObject,
     @Published private(set) var canConfigureWifi = false
     @Published private(set) var isSendingWifiConfiguration = false
     @Published private(set) var wifiWriteMessage: String?
+    @Published private(set) var wifiProvisioningState: WifiProvisioningState?
     
     override init() {
         super.init()
@@ -162,7 +167,8 @@ final class BluetoothManager: NSObject,
                 peripheral.discoverCharacteristics(
                     [
                         deviceIdentityCharacteristicUUID,
-                        wifiConfigCharacteristicUUID
+                        wifiConfigCharacteristicUUID,
+                        wifiStatusCharacteristicUUID
                     ],
                     for: service
                 )
@@ -198,6 +204,8 @@ final class BluetoothManager: NSObject,
                 canConfigureWifi = true
                 
                 print("Wi-Fi configuration characteristic ready")
+            } else if characteristic.uuid == wifiStatusCharacteristicUUID {
+                peripheral.setNotifyValue(true, for: characteristic)
             }
         }
     }
@@ -212,6 +220,20 @@ final class BluetoothManager: NSObject,
             return
         }
 
+        if characteristic.uuid == wifiStatusCharacteristicUUID {
+            guard peripheral === vehiclePeripheral,
+                  let data = characteristic.value,
+                  let payload = String(data: data, encoding: .utf8),
+                  let state = WifiProvisioningState(rawValue: payload) else {
+                print("Invalid Wi-Fi provisioning status")
+                return
+            }
+            
+            wifiProvisioningState = state
+            print("Wi-Fi provisioning status: \(state.rawValue)")
+            return
+        }
+        
         if characteristic.uuid == deviceIdentityCharacteristicUUID {
             guard let data = characteristic.value,
                   let payload = String(data: data, encoding: .utf8),
@@ -249,6 +271,12 @@ final class BluetoothManager: NSObject,
         if let error {
             print("Notification subscription failed: \(error)")
             return
+        }
+        
+        if characteristic.uuid == wifiStatusCharacteristicUUID,
+           characteristic.isNotifying
+        {
+            peripheral.readValue(for: characteristic)
         }
 
         print(
@@ -338,5 +366,6 @@ final class BluetoothManager: NSObject,
         wifiConfigCharacteristic = nil
         isSendingWifiConfiguration = false
         wifiWriteMessage = nil
+        wifiProvisioningState = nil
     }
 }
