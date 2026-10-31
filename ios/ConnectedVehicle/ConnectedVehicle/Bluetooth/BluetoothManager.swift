@@ -51,11 +51,13 @@ final class BluetoothManager: NSObject,
     @Published private(set) var isSendingWifiConfiguration = false
     @Published private(set) var wifiWriteMessage: String?
     @Published private(set) var wifiProvisioningState: WifiProvisioningState?
+    @Published private(set) var isWifiProvisioningPending = false
     
     var canStartWifiConfiguration: Bool {
         isConnected &&
         canConfigureWifi &&
         !isSendingWifiConfiguration &&
+        !isWifiProvisioningPending &&
         wifiProvisioningState != nil &&
         wifiProvisioningState != .connecting
     }
@@ -238,6 +240,11 @@ final class BluetoothManager: NSObject,
             }
             
             wifiProvisioningState = state
+            
+            if state == .connected || state == .timedOut {
+                isWifiProvisioningPending = false
+            }
+            
             print("Wi-Fi provisioning status: \(state.rawValue)")
             return
         }
@@ -339,6 +346,7 @@ final class BluetoothManager: NSObject,
 
         wifiWriteMessage = nil
         isSendingWifiConfiguration = true
+        isWifiProvisioningPending = true
 
         peripheral.writeValue(
             data,
@@ -375,5 +383,6 @@ final class BluetoothManager: NSObject,
         isSendingWifiConfiguration = false
         wifiWriteMessage = nil
         wifiProvisioningState = nil
+        isWifiProvisioningPending = false
     }
 }
