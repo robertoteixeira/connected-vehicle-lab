@@ -18,6 +18,7 @@ final class BluetoothManager: NSObject,
     private var vehiclePeripheral: CBPeripheral?
     private var vehicleStateCharacteristic: CBCharacteristic?
     private var wifiConfigCharacteristic: CBCharacteristic?
+    private var wifiResultDeadlineTask: Task<Void, Never>?
     
     private let vehicleServiceUUID = CBUUID(
         string: "7B9F0001-6C5A-4E8F-9D3A-2F1B7C8E0001"
@@ -242,7 +243,9 @@ final class BluetoothManager: NSObject,
             wifiProvisioningState = state
             
             if state == .connected || state == .timedOut {
+                cancelWifiResultDeadline()
                 isWifiProvisioningPending = false
+                wifiWriteMessage = nil
             }
             
             print("Wi-Fi provisioning status: \(state.rawValue)")
@@ -314,6 +317,7 @@ final class BluetoothManager: NSObject,
         isSendingWifiConfiguration = false
 
         if let error {
+            cancelWifiResultDeadline()
             isWifiProvisioningPending = false
             
             wifiWriteMessage = "Could not send credentials. Please try again."
@@ -321,6 +325,10 @@ final class BluetoothManager: NSObject,
         } else {
             wifiWriteMessage =
                 "Bluetooth write acknowledged."
+            
+            if isWifiProvisioningPending {
+                startWifiResultDeadline()
+            }
         }
     }
     
@@ -374,6 +382,7 @@ final class BluetoothManager: NSObject,
     }
     
     private func clearConnectionState() {
+        cancelWifiResultDeadline()
         isConnected = false
         canConfigureWifi = false
         hasReceivedTelemetry = false
@@ -386,5 +395,29 @@ final class BluetoothManager: NSObject,
         wifiWriteMessage = nil
         wifiProvisioningState = nil
         isWifiProvisioningPending = false
+    }
+    
+    private func startWifiResultDeadline() {
+        cancelWifiResultDeadline()
+        
+        wifiResultDeadlineTask = Task { [weak self] in
+            do {
+                try await Task.sleep(for: .seconds(25))
+            } catch {
+                return
+            }
+            
+            guard let self,
+                  self.isWifiProvisioningPending else {
+                return
+            }
+            
+            self.wifiWriteMessage = "No Wi-Fi result received. Reconnect Bluetooth before trying again."
+        }
+    }
+    
+    private func cancelWifiResultDeadline() {
+        wifiResultDeadlineTask?.cancel()
+        wifiResultDeadlineTask = nil
     }
 }
