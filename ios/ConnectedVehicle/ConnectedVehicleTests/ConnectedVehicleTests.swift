@@ -184,4 +184,54 @@ final class ConnectedVehicleTests: XCTestCase {
             )
         }
     }
+    
+    func testCredentialsPreserveEnteredValues() throws {
+        let credentials = try XCTUnwrap(
+            WifiCredentials(ssid: " Lab Network ", password: " Password ")
+        )
+
+        XCTAssertEqual(credentials.ssid, " Lab Network ")
+        XCTAssertEqual(credentials.password, " Password ")
+    }
+
+    func testCredentialsAllowOpenNetworks() {
+        XCTAssertNotNil(
+            WifiCredentials(ssid: "Lab", password: "")
+        )
+    }
+
+    func testCredentialLimitsCountUTF8Bytes() {
+        XCTAssertNotNil(
+            WifiCredentials(
+                ssid: String(repeating: "é", count: 16),
+                password: String(repeating: "a", count: 64)
+            )
+        )
+
+        XCTAssertNil(
+            WifiCredentials(
+                ssid: String(repeating: "é", count: 17),
+                password: ""
+            )
+        )
+
+        XCTAssertNil(
+            WifiCredentials(
+                ssid: "Lab",
+                password: String(repeating: "a", count: 65)
+            )
+        )
+    }
+
+    func testCredentialsRejectInvalidPayloadValues() {
+        for ssid in ["", "Lab,password=other", "Lab\0Network"] {
+            XCTAssertNil(
+                WifiCredentials(ssid: ssid, password: "password")
+            )
+        }
+
+        XCTAssertNil(
+            WifiCredentials(ssid: "Lab", password: "pass\0word")
+        )
+    }
 }

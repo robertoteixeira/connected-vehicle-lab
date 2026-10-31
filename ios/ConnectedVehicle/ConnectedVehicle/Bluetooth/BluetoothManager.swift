@@ -344,7 +344,16 @@ final class BluetoothManager: NSObject,
             return
         }
 
-        let payload = "ssid=\(ssid),password=\(password)"
+        guard let credentials = WifiCredentials(
+            ssid: ssid,
+            password: password
+        ) else {
+            wifiWriteMessage = "Network details are invalid."
+            return
+        }
+
+        let payload =
+            "ssid=\(credentials.ssid),password=\(credentials.password)"
         let data = Data(payload.utf8)
 
         guard data.count <= peripheral.maximumWriteValueLength(

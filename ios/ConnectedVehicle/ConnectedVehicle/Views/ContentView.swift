@@ -14,10 +14,10 @@ struct ContentView: View {
     
     private var canSubmitWifi: Bool {
         bluetoothManager.canStartWifiConfiguration &&
-        !wifiSSID.isEmpty &&
-        wifiSSID.utf8.count <= 32 &&
-        wifiPassword.utf8.count <= 64 &&
-        !wifiSSID.contains(",password=")
+        WifiCredentials(
+            ssid: wifiSSID,
+            password: wifiPassword
+        ) != nil
     }
     
     var body: some View {
