@@ -314,6 +314,8 @@ final class BluetoothManager: NSObject,
         isSendingWifiConfiguration = false
 
         if let error {
+            isWifiProvisioningPending = false
+            
             wifiWriteMessage = "Could not send credentials. Please try again."
             print("Wi-Fi configuration write failed: \(error)")
         } else {
