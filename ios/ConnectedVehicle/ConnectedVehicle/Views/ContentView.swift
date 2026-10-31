@@ -13,8 +13,7 @@ struct ContentView: View {
     @State private var wifiPassword = ""
     
     private var canSubmitWifi: Bool {
-        bluetoothManager.canConfigureWifi &&
-        !bluetoothManager.isSendingWifiConfiguration &&
+        bluetoothManager.canStartWifiConfiguration &&
         !wifiSSID.isEmpty &&
         wifiSSID.utf8.count <= 32 &&
         wifiPassword.utf8.count <= 64 &&

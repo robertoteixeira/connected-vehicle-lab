@@ -52,6 +52,14 @@ final class BluetoothManager: NSObject,
     @Published private(set) var wifiWriteMessage: String?
     @Published private(set) var wifiProvisioningState: WifiProvisioningState?
     
+    var canStartWifiConfiguration: Bool {
+        isConnected &&
+        canConfigureWifi &&
+        !isSendingWifiConfiguration &&
+        wifiProvisioningState != nil &&
+        wifiProvisioningState != .connecting
+    }
+    
     override init() {
         super.init()
         centralManager = CBCentralManager(delegate: self, queue: nil)
@@ -308,7 +316,7 @@ final class BluetoothManager: NSObject,
     }
     
     func sendWifiConfiguration(ssid: String, password: String) {
-        guard !isSendingWifiConfiguration else {
+        guard canStartWifiConfiguration else {
             return
         }
 
