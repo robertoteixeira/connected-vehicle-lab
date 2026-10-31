@@ -15,7 +15,8 @@ class WifiConfigCallbacks : public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic* characteristic) override {
         const std::string value = characteristic->getValue();
 
-        if (value.empty()) {
+        if (value.empty() || value.find('\0') != std::string::npos) {
+            Serial.println("Invalid Wi-Fi configuration payload.");
             return;
         }
 
@@ -33,6 +34,11 @@ class WifiConfigCallbacks : public BLECharacteristicCallbacks {
             value.substr(ssidPrefix.length(), passwordPosition - ssidPrefix.length());
 
         const std::string password = value.substr(passwordPosition + passwordSeparator.length());
+
+        if (ssid.empty() || ssid.size() > 32 || password.size() > 64) {
+            Serial.println("Invalid Wi-Fi credential length");
+            return;
+        }
 
         Serial.printf("Received Wi-Fi credentials for SSID: %s\n", ssid.c_str());
 
