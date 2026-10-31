@@ -2,7 +2,9 @@
 
 An ESP32 vehicle simulation prototype built with C++ and the Arduino framework. Physical controls drive simulated ignition, throttle, braking, and headlights; an OLED shows vehicle state while the serial port emits periodic telemetry.
 
-The current firmware is a standalone hardware lab. It does not yet transmit telemetry over BLE, connect to a mobile app, or interface with a real vehicle or CAN bus.
+The ESP32 transmits simulated vehicle telemetry over BLE to the native iOS app, Vehicle Lab. The app also reads device identity and provisions Wi-Fi credentials. This project does not interface with a real vehicle or CAN bus.
+
+See [BLE protocol](docs/BLE_PROTOCOL.md) for services, payloads, validation rules, and current limitations.
 
 ## Features
 
