@@ -19,6 +19,7 @@ final class BluetoothManager: NSObject,
     private var vehicleStateCharacteristic: CBCharacteristic?
     private var wifiConfigCharacteristic: CBCharacteristic?
     private var wifiResultDeadlineTask: Task<Void, Never>?
+    private var connectionDeadlineTask: Task<Void, Never>?
     
     private let vehicleServiceUUID = CBUUID(
         string: "7B9F0001-6C5A-4E8F-9D3A-2F1B7C8E0001"
@@ -105,17 +106,23 @@ final class BluetoothManager: NSObject,
         advertisementData: [String: Any],
         rssi RSSI: NSNumber
     ) {
+        guard vehiclePeripheral == nil else {
+            return
+        }
+        
         print("Discovered: \(peripheral.name ?? "Unknown") RSSI: \(RSSI)")
         
         vehiclePeripheral = peripheral
         central.stopScan()
         central.connect(peripheral, options: nil)
+        startConnectionDeadline(for: peripheral)
     }
     
     func centralManager(
         _ central: CBCentralManager,
         didConnect peripheral: CBPeripheral
     ) {
+        cancelConnectionDeadline()
         hasReceivedTelemetry = false
         isConnected = true
         
@@ -377,6 +384,33 @@ final class BluetoothManager: NSObject,
         )
     }
     
+    private func startConnectionDeadline(for peripheral: CBPeripheral) {
+        cancelConnectionDeadline()
+
+        connectionDeadlineTask = Task { [weak self] in
+            do {
+                try await Task.sleep(for: .seconds(15))
+            } catch {
+                return
+            }
+
+            guard let self,
+                  self.centralManager.state == .poweredOn,
+                  self.vehiclePeripheral === peripheral,
+                  peripheral.state == .connecting else {
+                return
+            }
+
+            print("BLE connection attempt timed out")
+            self.centralManager.cancelPeripheralConnection(peripheral)
+        }
+    }
+
+    private func cancelConnectionDeadline() {
+        connectionDeadlineTask?.cancel()
+        connectionDeadlineTask = nil
+    }
+    
     private func scheduleScanRetry() {
         Task { [weak self] in
             try? await Task.sleep(for: .seconds(2))
@@ -394,6 +428,7 @@ final class BluetoothManager: NSObject,
     }
     
     private func clearConnectionState() {
+        cancelConnectionDeadline()
         cancelWifiResultDeadline()
         isConnected = false
         canConfigureWifi = false
