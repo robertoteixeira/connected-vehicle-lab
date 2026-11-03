@@ -6,9 +6,37 @@
 //
 
 import SwiftUI
+import CoreBluetooth
 
 struct ContentView: View {
     @EnvironmentObject private var bluetoothManager: BluetoothManager
+    
+    private var connectionStatusText: String {
+        switch bluetoothManager.bluetoothState {
+        case .poweredOn:
+            return bluetoothManager.isConnected
+                ? "Connected"
+                : "No device connected"
+
+        case .poweredOff:
+            return "Turn on Bluetooth in Settings"
+
+        case .unauthorized:
+            return "Allow Bluetooth access in Settings"
+
+        case .unsupported:
+            return "Bluetooth is unavailable on this device"
+
+        case .resetting:
+            return "Bluetooth is restarting…"
+
+        case .unknown:
+            return "Checking Bluetooth…"
+
+        @unknown default:
+            return "Bluetooth is unavailable"
+        }
+    }
     
     var body: some View {
         ScrollView {
@@ -17,12 +45,15 @@ struct ContentView: View {
                     .font(.title)
                 
                 Label(
-                    bluetoothManager.isConnected ? "Connected" : "Disconnected",
+                    connectionStatusText,
                     systemImage: bluetoothManager.isConnected
-                    ? "checkmark.circle.fill"
-                    : "exclamationmark.circle"
+                        ? "checkmark.circle.fill"
+                        : "exclamationmark.circle"
                 )
-                .foregroundStyle(bluetoothManager.isConnected ? Color.green : Color.secondary)
+                .foregroundStyle(
+                    bluetoothManager.isConnected ? Color.green : Color.secondary
+                )
+                .multilineTextAlignment(.center)
                 
                 if bluetoothManager.isConnected {
                     if let identity = bluetoothManager.deviceIdentity {

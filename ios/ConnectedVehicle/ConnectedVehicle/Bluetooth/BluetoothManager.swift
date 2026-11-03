@@ -53,6 +53,7 @@ final class BluetoothManager: NSObject,
     @Published private(set) var wifiWriteMessage: String?
     @Published private(set) var wifiProvisioningState: WifiProvisioningState?
     @Published private(set) var isWifiProvisioningPending = false
+    @Published private(set) var bluetoothState: CBManagerState = .unknown
     
     var canStartWifiConfiguration: Bool {
         isConnected &&
@@ -69,6 +70,8 @@ final class BluetoothManager: NSObject,
     }
     
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        bluetoothState = central.state
+        
         if central.state != .poweredOn {
             clearConnectionState()
         }
