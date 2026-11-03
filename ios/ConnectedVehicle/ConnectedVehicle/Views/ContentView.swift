@@ -9,16 +9,6 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject private var bluetoothManager: BluetoothManager
-    @State private var wifiSSID = ""
-    @State private var wifiPassword = ""
-    
-    private var canSubmitWifi: Bool {
-        bluetoothManager.canStartWifiConfiguration &&
-        WifiCredentials(
-            ssid: wifiSSID,
-            password: wifiPassword
-        ) != nil
-    }
     
     var body: some View {
         ScrollView {
@@ -73,73 +63,8 @@ struct ContentView: View {
                 
                 if bluetoothManager.isConnected {
                     Divider()
-                    
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Configure device Wi-Fi")
-                            .font(.headline)
-                        
-                        TextField("Network name (SSID)", text: $wifiSSID)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .textFieldStyle(.roundedBorder)
-                        
-                        SecureField("Password", text: $wifiPassword)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .textFieldStyle(.roundedBorder)
-                        
-                        Button("Send Wi-Fi credentials") {
-                            bluetoothManager.sendWifiConfiguration(
-                                ssid: wifiSSID,
-                                password: wifiPassword
-                            )
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(!canSubmitWifi)
-                        
-                        if bluetoothManager.isSendingWifiConfiguration {
-                            ProgressView("Sending credentials…")
-                        }
 
-                        if let message = bluetoothManager.wifiWriteMessage {
-                            Text(message)
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Device Wi-Fi setup")
-                                .font(.subheadline)
-                                .bold()
-                            
-                            switch bluetoothManager.wifiProvisioningState {
-                            case .idle:
-                                Text("No connection attempt started.")
-                                
-                            case .connecting:
-                                ProgressView("Connecting to Wi-Fi...")
-                                
-                            case .connected:
-                                Label(
-                                    "Last connection attempt succeeded",
-                                    systemImage: "exclamationmark.triangle"
-                                )
-                                .foregroundStyle(.green)
-                                
-                            case .timedOut:
-                                Label(
-                                    "Connection timed out. Check the network details and try again.",
-                                    systemImage: "exclamationmark.triangle"
-                                )
-                                .foregroundStyle(.orange)
-                                
-                            case nil:
-                                Text("Wi-Fi setup status unavailable.")
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        .font(.footnote)
-                    }
+                    WifiProvisioningView(bluetoothManager: bluetoothManager)
                 }
             }
             .padding()
