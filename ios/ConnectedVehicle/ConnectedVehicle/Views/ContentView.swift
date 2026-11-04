@@ -14,9 +14,16 @@ struct ContentView: View {
     private var connectionStatusText: String {
         switch bluetoothManager.bluetoothState {
         case .poweredOn:
-            return bluetoothManager.isConnected
-                ? "Connected"
-                : "No device connected"
+            switch bluetoothManager.connectionPhase {
+            case .idle:
+                return "Waiting to search for a device…"
+            case .scanning:
+                return "Searching for a vehicle…"
+            case .connecting:
+                return "Connecting to vehicle…"
+            case .connected:
+                return "Connected"
+            }
 
         case .poweredOff:
             return "Turn on Bluetooth in Settings"

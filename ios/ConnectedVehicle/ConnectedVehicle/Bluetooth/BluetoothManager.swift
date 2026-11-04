@@ -46,7 +46,6 @@ final class BluetoothManager: NSObject,
     )
     
     @Published private(set) var vehicleState = VehicleState()
-    @Published private(set) var isConnected = false
     @Published private(set) var deviceIdentity: DeviceIdentity?
     @Published private(set) var hasReceivedTelemetry = false
     @Published private(set) var canConfigureWifi = false
@@ -55,6 +54,11 @@ final class BluetoothManager: NSObject,
     @Published private(set) var wifiProvisioningState: WifiProvisioningState?
     @Published private(set) var isWifiProvisioningPending = false
     @Published private(set) var bluetoothState: CBManagerState = .unknown
+    @Published private(set) var connectionPhase: BLEConnectionPhase = .idle
+
+    var isConnected: Bool {
+        connectionPhase == .connected
+    }
     
     var canStartWifiConfiguration: Bool {
         isConnected &&
@@ -74,6 +78,7 @@ final class BluetoothManager: NSObject,
         bluetoothState = central.state
         
         if central.state != .poweredOn {
+            connectionPhase = .scanning
             clearConnectionState()
         }
         
@@ -114,6 +119,7 @@ final class BluetoothManager: NSObject,
         
         vehiclePeripheral = peripheral
         central.stopScan()
+        connectionPhase = .connecting
         central.connect(peripheral, options: nil)
         startConnectionDeadline(for: peripheral)
     }
@@ -124,7 +130,7 @@ final class BluetoothManager: NSObject,
     ) {
         cancelConnectionDeadline()
         hasReceivedTelemetry = false
-        isConnected = true
+        connectionPhase = .connected
         
         print("Connected: \(peripheral.name ?? "Unknown")")
         
@@ -423,6 +429,7 @@ final class BluetoothManager: NSObject,
             
             print("Retrying BLE scan")
             
+            self.connectionPhase = .scanning
             self.centralManager.scanForPeripherals(withServices: [self.vehicleServiceUUID], options: nil)
         }
     }
@@ -430,7 +437,7 @@ final class BluetoothManager: NSObject,
     private func clearConnectionState() {
         cancelConnectionDeadline()
         cancelWifiResultDeadline()
-        isConnected = false
+        connectionPhase = .idle
         canConfigureWifi = false
         hasReceivedTelemetry = false
         deviceIdentity = nil
