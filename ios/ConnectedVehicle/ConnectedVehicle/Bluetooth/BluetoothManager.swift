@@ -78,7 +78,6 @@ final class BluetoothManager: NSObject,
         bluetoothState = central.state
         
         if central.state != .poweredOn {
-            connectionPhase = .scanning
             clearConnectionState()
         }
         
@@ -86,6 +85,7 @@ final class BluetoothManager: NSObject,
         case .poweredOn:
             print("BLE powered on")
             
+            connectionPhase = .scanning
             central.scanForPeripherals(
                 withServices: [vehicleServiceUUID],
                 options: nil
