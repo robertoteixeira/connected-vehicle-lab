@@ -20,6 +20,7 @@ final class BluetoothManager: NSObject,
     private var wifiConfigCharacteristic: CBCharacteristic?
     private var wifiResultDeadlineTask: Task<Void, Never>?
     private var connectionDeadlineTask: Task<Void, Never>?
+    private var scanRetryTask: Task<Void, Never>?
     
     private let vehicleServiceUUID = CBUUID(
         string: "7B9F0001-6C5A-4E8F-9D3A-2F1B7C8E0001"
@@ -85,6 +86,7 @@ final class BluetoothManager: NSObject,
         case .poweredOn:
             print("BLE powered on")
             
+            cancelScanRetry()
             connectionPhase = .scanning
             central.scanForPeripherals(
                 withServices: [vehicleServiceUUID],
@@ -115,6 +117,8 @@ final class BluetoothManager: NSObject,
             return
         }
         
+        cancelScanRetry()
+
         print("Discovered: \(peripheral.name ?? "Unknown") RSSI: \(RSSI)")
         
         vehiclePeripheral = peripheral
@@ -128,6 +132,7 @@ final class BluetoothManager: NSObject,
         _ central: CBCentralManager,
         didConnect peripheral: CBPeripheral
     ) {
+        cancelScanRetry()
         cancelConnectionDeadline()
         hasReceivedTelemetry = false
         connectionPhase = .connected
@@ -418,23 +423,44 @@ final class BluetoothManager: NSObject,
     }
     
     private func scheduleScanRetry() {
-        Task { [weak self] in
-            try? await Task.sleep(for: .seconds(2))
-            
-            guard let self,
-                  self.centralManager.state == .poweredOn,
-                  self.vehiclePeripheral == nil else {
+        cancelScanRetry()
+
+        guard centralManager.state == .poweredOn,
+              vehiclePeripheral == nil else {
+            return
+        }
+
+        scanRetryTask = Task { [weak self] in
+            do {
+                try await Task.sleep(for: .seconds(2))
+            } catch {
                 return
             }
-            
+
+            guard let self,
+                  self.centralManager.state == .poweredOn,
+                  self.vehiclePeripheral == nil,
+                  !self.centralManager.isScanning else {
+                return
+            }
+
             print("Retrying BLE scan")
-            
+
             self.connectionPhase = .scanning
-            self.centralManager.scanForPeripherals(withServices: [self.vehicleServiceUUID], options: nil)
+            self.centralManager.scanForPeripherals(
+                withServices: [self.vehicleServiceUUID],
+                options: nil
+            )
         }
+    }
+
+    private func cancelScanRetry() {
+        scanRetryTask?.cancel()
+        scanRetryTask = nil
     }
     
     private func clearConnectionState() {
+        cancelScanRetry()
         cancelConnectionDeadline()
         cancelWifiResultDeadline()
         connectionPhase = .idle
