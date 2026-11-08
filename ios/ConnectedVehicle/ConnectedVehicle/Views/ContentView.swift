@@ -62,6 +62,41 @@ struct ContentView: View {
                 )
                 .multilineTextAlignment(.center)
                 
+                if bluetoothManager.connectionPhase == .scanning {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Nearby vehicles")
+                            .font(.headline)
+                        
+                        if bluetoothManager.discoveredVehicles.isEmpty {
+                            ProgressView("Looking for devices...")
+                        }
+                        
+                        ForEach(bluetoothManager.discoveredVehicles) { vehicle in
+                            Button {
+                                bluetoothManager.connect(to: vehicle.id)
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading) {
+                                        Text(vehicle.name)
+                                        
+                                        Text(String(vehicle.id.uuidString.prefix(8)))
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    Text("\(vehicle.rssi) dBm")
+                                        .font(.caption)
+                                    
+                                    Image(systemName: "chevron.right")
+                                }
+                            }
+                            .buttonStyle(.bordered)
+                        }
+                    }
+                }
+                
                 if bluetoothManager.isConnected {
                     if let identity = bluetoothManager.deviceIdentity {
                         VStack(alignment: .leading, spacing: 6) {

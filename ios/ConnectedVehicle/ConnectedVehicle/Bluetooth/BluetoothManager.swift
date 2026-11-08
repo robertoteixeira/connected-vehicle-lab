@@ -16,6 +16,7 @@ final class BluetoothManager: NSObject,
                               CBPeripheralDelegate {
     private var centralManager: CBCentralManager!
     private var vehiclePeripheral: CBPeripheral?
+    private var selectedPeripheralID: UUID?
     private var vehicleStateCharacteristic: CBCharacteristic?
     private var wifiConfigCharacteristic: CBCharacteristic?
     private var wifiResultDeadlineTask: Task<Void, Never>?
@@ -56,6 +57,7 @@ final class BluetoothManager: NSObject,
     @Published private(set) var isWifiProvisioningPending = false
     @Published private(set) var bluetoothState: CBManagerState = .unknown
     @Published private(set) var connectionPhase: BLEConnectionPhase = .idle
+    @Published private(set) var discoveredVehicles: [DiscoveredVehicle] = []
 
     var isConnected: Bool {
         connectionPhase == .connected
@@ -87,6 +89,7 @@ final class BluetoothManager: NSObject,
             print("BLE powered on")
             
             cancelScanRetry()
+            discoveredVehicles = []
             connectionPhase = .scanning
             central.scanForPeripherals(
                 withServices: [vehicleServiceUUID],
@@ -113,19 +116,52 @@ final class BluetoothManager: NSObject,
         advertisementData: [String: Any],
         rssi RSSI: NSNumber
     ) {
-        guard vehiclePeripheral == nil else {
+        guard central.state == .poweredOn,
+              connectionPhase == .scanning,
+              vehiclePeripheral == nil else {
+            return
+        }
+        
+        let vehicle = DiscoveredVehicle(
+            peripheral: peripheral,
+            rssi: RSSI.intValue
+        )
+        
+        if let index = discoveredVehicles.firstIndex(
+            where: { $0.id == vehicle.id }
+        ) {
+            discoveredVehicles[index] = vehicle
+        } else {
+            discoveredVehicles.append(vehicle)
+        }
+        
+        print("Discovered: \(vehicle.name) RSSI: \(vehicle.rssi)")
+        
+        if selectedPeripheralID == vehicle.id {
+            connect(to: vehicle.id)
+        }
+    }
+    
+    func connect(to identifier: UUID) {
+        guard centralManager.state == .poweredOn,
+              connectionPhase == .scanning,
+              vehiclePeripheral == nil,
+              let vehicle = discoveredVehicles.first(
+                where: { $0.id == identifier }
+              ) else {
             return
         }
         
         cancelScanRetry()
-
-        print("Discovered: \(peripheral.name ?? "Unknown") RSSI: \(RSSI)")
         
-        vehiclePeripheral = peripheral
-        central.stopScan()
+        selectedPeripheralID = identifier
+        vehiclePeripheral = vehicle.peripheral
+        
+        centralManager.stopScan()
         connectionPhase = .connecting
-        central.connect(peripheral, options: nil)
-        startConnectionDeadline(for: peripheral)
+        
+        centralManager.connect(vehicle.peripheral, options: nil)
+        startConnectionDeadline(for: vehicle.peripheral)
     }
     
     func centralManager(
@@ -458,6 +494,7 @@ final class BluetoothManager: NSObject,
 
             print("Retrying BLE scan")
 
+            self.discoveredVehicles = []
             self.connectionPhase = .scanning
             self.centralManager.scanForPeripherals(
                 withServices: [self.vehicleServiceUUID],
@@ -472,6 +509,8 @@ final class BluetoothManager: NSObject,
     }
     
     private func clearConnectionState() {
+        discoveredVehicles = []
+        
         cancelScanRetry()
         cancelConnectionDeadline()
         cancelWifiResultDeadline()
