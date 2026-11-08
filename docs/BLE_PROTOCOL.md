@@ -46,15 +46,19 @@ broken connection. Read the characteristic for an initial snapshot.
 Example:
 
 ```text
-id=VEH-001,hw=ESP32-DEVKIT-V1,fw=0.1.0
+id=VEH-A1B2C3D4E5F6,hw=ESP32-DEVKIT-V1,fw=0.1.0
 ```
 
 `id`, `hw`, and `fw` are required and nonempty. Field order is not
 significant. Clients must reject duplicate keys and malformed fields.
 Unknown nonempty fields with valid structure may be ignored.
 
-The current device ID is a hardcoded prototype value, not a unique
-hardware identifier.
+The device ID is generated from the ESP32's factory MAC value and uses
+the format `VEH-` followed by 12 uppercase hexadecimal characters. It
+remains stable across restarts and firmware uploads. It identifies a
+board but does not authenticate it. The hexadecimal suffix is the
+formatted value returned by `ESP.getEfuseMac()`, not a conventional
+colon-separated MAC address.
 
 ## Wi-Fi configuration
 

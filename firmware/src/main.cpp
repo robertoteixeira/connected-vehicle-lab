@@ -174,6 +174,10 @@ void setup() {
     headlightButton.begin();
 
     Serial.begin(115200);
+
+    snprintf(deviceIdentity.deviceId, sizeof(deviceIdentity.deviceId), "VEH-%012llX",
+             static_cast<unsigned long long>(ESP.getEfuseMac()));
+
     wifiManager.begin();
 
     BLEDevice::init("ConnectedVehicle");

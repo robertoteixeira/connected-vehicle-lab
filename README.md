@@ -109,11 +109,13 @@ The ESP32 advertises as `ConnectedVehicle`. The app display name is `Vehicle Lab
 | Characteristic | Properties | Example payload |
 | --- | --- | --- |
 | Vehicle state | Read, Notify | `ign=1,speed=42.5,rpm=2500,thr=30.0,brk=0,lgt=1` |
-| Device identity | Read | `id=VEH-001,hw=ESP32-DEVKIT-V1,fw=0.1.0` |
+| Device identity | Read | `id=VEH-A1B2C3D4E5F6,hw=ESP32-DEVKIT-V1,fw=0.1.0` |
 | Wi-Fi configuration | Write | `ssid=Lab Network,password=example-password` |
 | Wi-Fi provisioning status | Read, Notify | `idle`, `connecting`, `connected`, `timed_out` |
 
 See [BLE protocol](docs/BLE_PROTOCOL.md) for UUIDs, payload rules, notification behavior, queue semantics, and limitations.
+
+Each board generates a stable ID from the ESP32's factory MAC value, formatted as `VEH-` followed by 12 hexadecimal characters. The ID identifies the board; it is not an authentication credential.
 
 ## Try it on hardware
 
@@ -159,7 +161,7 @@ The ESP32 and iOS app work together on real hardware. Current limitations includ
 - No protocol version or request identifiers.
 - Invalid credential payloads are rejected through serial logging, without an application-level rejection response.
 - BLE pairing and encrypted access are not configured by the firmware.
-- Device identity uses a hardcoded prototype ID, and the app has no device-selection screen.
+- The app automatically connects to the first matching device and has no device-selection screen.
 - No implemented background BLE workflow or continuous Wi-Fi connection-loss reporting.
 - No automated firmware unit tests or BLE integration tests yet.
 
