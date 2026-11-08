@@ -72,7 +72,8 @@ Adafruit GFX and Adafruit SSD1306 dependencies are declared in `firmware/platfor
 
 A native **SwiftUI + CoreBluetooth** app targeting **iOS 17.6 and later**.
 
-- Scans for the vehicle service UUID and lists nearby matching devices for selection, including signal strength and a short peripheral identifier. Reconnects automatically to the selected board during the current app session.
+- Scans for the vehicle service UUID and lists nearby matching devices for selection, including signal strength and a short peripheral identifier. Saves the selected peripheral UUID in `UserDefaults` and reconnects when that device is rediscovered, including after app relaunch.
+- Offers **Choose another vehicle** while connected or connecting, clearing the selection and returning to the picker after disconnection.
 - Reads device identity and shows vehicle readings after the first valid telemetry payload arrives.
 - Explains Bluetooth availability, including disabled Bluetooth and denied access.
 - Cancels pending BLE connection attempts after 15 seconds and schedules a scan retry after 2 seconds on failure or disconnection. Recovery is intended for foreground use.
@@ -90,7 +91,7 @@ Wi-Fi status describes the last provisioning attempt. A successful attempt is no
 2. Select the `ConnectedVehicle` app target and choose your development team under **Signing & Capabilities** for device installation.
 3. Select a physical iPhone running iOS 17.6 or later and the `ConnectedVehicle` scheme.
 4. Build and run with **⌘R**, then allow Bluetooth access when prompted.
-5. Keep the ESP32 powered nearby and tap its entry under **Nearby vehicles**. Selection happens in the app; no manual selection in iPhone Bluetooth Settings is required. Relaunching the app requires selecting a device again.
+5. Keep the ESP32 powered nearby and tap its entry under **Nearby vehicles** on first use. Selection happens in the app; no manual selection in iPhone Bluetooth Settings is required. Later launches reconnect when the saved peripheral is rediscovered. **Choose another vehicle** clears the saved selection.
 
 Use a physical iPhone to validate BLE communication with the ESP32. The simulator can run model tests and SwiftUI previews without the board.
 
@@ -161,13 +162,13 @@ The ESP32 and iOS app work together on real hardware. Current limitations includ
 - No protocol version or request identifiers.
 - Invalid credential payloads are rejected through serial logging, without an application-level rejection response.
 - BLE pairing and encrypted access are not configured by the firmware.
-- Device selection is retained only for the current app session; it is not persisted across launches. Discovery results are not continuously expired when devices leave range.
+- Saved selection uses a local CoreBluetooth peripheral UUID, not authenticated device identity. Discovery results are not continuously expired when devices leave range.
 - No implemented background BLE workflow or continuous Wi-Fi connection-loss reporting.
 - No automated firmware unit tests or BLE integration tests yet.
 
 Development proceeds in this order:
 
-1. **Finish the iOS experience and device interaction:** provisioning rejection responses, asynchronous recovery, device switching and remembered selection, access protection, UI polish, and verification.
+1. **Finish the iOS experience and device interaction:** provisioning rejection responses, asynchronous recovery, access protection, UI polish, and verification.
 2. **Build the backend and Azure IoT integration:** device authentication, cloud telemetry ingestion, processing, storage, and APIs. Concrete service choices will be made during that phase.
 3. **Explore additional mobile implementations:** native Android, Flutter, and React Native.
 4. **Extract SDKs:** identify reusable protocol, validation, and communication components from the completed implementations.

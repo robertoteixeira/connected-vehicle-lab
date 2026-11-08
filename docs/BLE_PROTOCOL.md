@@ -6,11 +6,16 @@ using the vehicle service UUID rather than relying on its name.
 Payloads use UTF-8 text. No terminating null byte is transmitted.
 
 The iOS client lists matching peripherals for the user to select. It
-remembers that selection for automatic reconnection during the current
-app session. The picker uses CoreBluetooth's peripheral identifier;
-this is distinct from the firmware's `VEH-…` ID, which is read after
-connection. Selection is not persisted across app launches and does
-not authenticate the device.
+saves the selected CoreBluetooth peripheral UUID in `UserDefaults` and
+reconnects when that peripheral is rediscovered, including after app
+relaunch. This identifier is distinct from the firmware's `VEH-…` ID,
+which is read after connection. A saved selection does not authenticate
+the device, and the client does not persist Wi-Fi credentials in
+`UserDefaults`.
+
+The iOS **Choose another vehicle** action clears the saved selection and
+cancels the active or pending local connection. After the cancellation
+callback, the client resumes scanning and waits for a new selection.
 
 ## Services and characteristics
 

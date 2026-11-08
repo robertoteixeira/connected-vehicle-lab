@@ -17,6 +17,8 @@ final class BluetoothManager: NSObject,
     private var centralManager: CBCentralManager!
     private var vehiclePeripheral: CBPeripheral?
     private var selectedPeripheralID: UUID?
+    private static let selectedPeripheralDefaultsKey =
+        "selectedVehiclePeripheralID"
     private var vehicleStateCharacteristic: CBCharacteristic?
     private var wifiConfigCharacteristic: CBCharacteristic?
     private var wifiResultDeadlineTask: Task<Void, Never>?
@@ -74,6 +76,13 @@ final class BluetoothManager: NSObject,
     
     override init() {
         super.init()
+        
+        if let storedID = UserDefaults.standard.string(
+            forKey: Self.selectedPeripheralDefaultsKey
+        ) {
+            selectedPeripheralID = UUID(uuidString: storedID)
+        }
+        
         centralManager = CBCentralManager(delegate: self, queue: nil)
     }
     
@@ -155,6 +164,12 @@ final class BluetoothManager: NSObject,
         cancelScanRetry()
         
         selectedPeripheralID = identifier
+        
+        UserDefaults.standard.set(
+            identifier.uuidString,
+            forKey: Self.selectedPeripheralDefaultsKey
+        )
+        
         vehiclePeripheral = vehicle.peripheral
         
         centralManager.stopScan()
@@ -173,6 +188,8 @@ final class BluetoothManager: NSObject,
               }
         
         selectedPeripheralID = nil
+        
+        UserDefaults.standard.removeObject(forKey: Self.selectedPeripheralDefaultsKey)
         
         cancelConnectionDeadline()
         cancelWifiResultDeadline()
