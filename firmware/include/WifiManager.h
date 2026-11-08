@@ -9,7 +9,7 @@ enum class WifiProvisioningState { Idle, Connecting, Connected, TimedOut };
 class WifiManager {
    public:
     void begin();
-    void connect(const char* ssid, const char* password);
+    bool connect(const char* ssid, const char* password);
     void update();
     WifiProvisioningState provisioningState() const;
 

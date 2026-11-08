@@ -14,15 +14,15 @@ void WifiManager::begin() {
     }
 }
 
-void WifiManager::connect(const char* ssid, const char* password) {
+bool WifiManager::connect(const char* ssid, const char* password) {
     if (connectionQueue_ == nullptr) {
         Serial.println("Wi-Fi connection queue unavailable");
-        return;
+        return false;
     }
 
     if (ssid == nullptr || password == nullptr) {
         Serial.println("Missing Wi-Fi credentials");
-        return;
+        return false;
     }
 
     ConnectionRequest request{};
@@ -33,7 +33,7 @@ void WifiManager::connect(const char* ssid, const char* password) {
     if (ssidLength == 0 || ssidLength >= sizeof(request.ssid) ||
         passwordLength >= sizeof(request.password)) {
         Serial.println("Invalid Wi-Fi credential length");
-        return;
+        return false;
     }
 
     memcpy(request.ssid, ssid, ssidLength);
@@ -41,10 +41,11 @@ void WifiManager::connect(const char* ssid, const char* password) {
 
     if (xQueueOverwrite(connectionQueue_, &request) != pdPASS) {
         Serial.println("Failed to queue Wi-Fi connection request");
-        return;
+        return false;
     }
 
     Serial.printf("Wi-Fi connection requested for SSID: %s\n", request.ssid);
+    return true;
 }
 
 WifiProvisioningState WifiManager::provisioningState() const { return provisioningState_; }

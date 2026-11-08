@@ -42,7 +42,9 @@ class WifiConfigCallbacks : public BLECharacteristicCallbacks {
 
         Serial.printf("Received Wi-Fi credentials for SSID: %s\n", ssid.c_str());
 
-        wifiManager_.connect(ssid.c_str(), password.c_str());
+        const bool accepted = wifiManager_.connect(ssid.c_str(), password.c_str());
+        Serial.println(accepted ? "Wi-Fi request accepted into queue"
+                                : "Wi-Fi request rejected by manager");
     }
 
    private:
