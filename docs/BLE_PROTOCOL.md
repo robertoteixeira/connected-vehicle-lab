@@ -5,6 +5,13 @@ using the vehicle service UUID rather than relying on its name.
 
 Payloads use UTF-8 text. No terminating null byte is transmitted.
 
+The iOS client lists matching peripherals for the user to select. It
+remembers that selection for automatic reconnection during the current
+app session. The picker uses CoreBluetooth's peripheral identifier;
+this is distinct from the firmware's `VEH-…` ID, which is read after
+connection. Selection is not persisted across app launches and does
+not authenticate the device.
+
 ## Services and characteristics
 
 | Purpose | UUID | Properties |

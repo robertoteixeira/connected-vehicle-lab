@@ -164,14 +164,32 @@ final class BluetoothManager: NSObject,
         startConnectionDeadline(for: vehicle.peripheral)
     }
     
+    func chooseAnotherVehicle() {
+        guard centralManager.state == .poweredOn,
+              connectionPhase == .connected ||
+                connectionPhase == .connecting,
+              let peripheral = vehiclePeripheral else {
+                  return
+              }
+        
+        selectedPeripheralID = nil
+        
+        cancelConnectionDeadline()
+        cancelWifiResultDeadline()
+        
+        connectionPhase = .disconnecting
+        centralManager.cancelPeripheralConnection(peripheral)
+    }
+    
     func centralManager(
         _ central: CBCentralManager,
         didConnect peripheral: CBPeripheral
     ) {
-        guard peripheral === vehiclePeripheral else {
+        guard peripheral === vehiclePeripheral,
+        connectionPhase == .connecting else {
             return
         }
-
+        
         cancelScanRetry()
         cancelConnectionDeadline()
         hasReceivedTelemetry = false

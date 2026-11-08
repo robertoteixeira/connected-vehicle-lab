@@ -23,6 +23,8 @@ struct ContentView: View {
                 return "Connecting to vehicle…"
             case .connected:
                 return "Connected"
+            case .disconnecting:
+                return "Disconnecting from vehicle"
             }
 
         case .poweredOff:
@@ -61,6 +63,14 @@ struct ContentView: View {
                     bluetoothManager.isConnected ? Color.green : Color.secondary
                 )
                 .multilineTextAlignment(.center)
+                
+                if bluetoothManager.connectionPhase == .connected ||
+                    bluetoothManager.connectionPhase == .connecting {
+                    Button("Choose another vehicle") {
+                        bluetoothManager.chooseAnotherVehicle()
+                    }
+                    .buttonStyle(.bordered)
+                }
                 
                 if bluetoothManager.connectionPhase == .scanning {
                     VStack(alignment: .leading, spacing: 12) {

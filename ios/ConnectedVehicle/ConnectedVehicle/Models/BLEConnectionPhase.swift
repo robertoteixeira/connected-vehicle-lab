@@ -10,4 +10,5 @@ enum BLEConnectionPhase {
     case scanning
     case connecting
     case connected
+    case disconnecting
 }
