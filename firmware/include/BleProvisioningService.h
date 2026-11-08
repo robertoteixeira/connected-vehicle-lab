@@ -15,4 +15,5 @@ class BleProvisioningService {
     BLECharacteristic* wifiConfigCharacteristic_ = nullptr;
     BLECharacteristic* wifiStatusCharacteristic_ = nullptr;
     WifiProvisioningState lastWifiState_ = WifiProvisioningState::Idle;
+    BLECharacteristic* wifiRequestResultCharacteristic_ = nullptr;
 };

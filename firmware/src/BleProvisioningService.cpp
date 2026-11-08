@@ -7,16 +7,19 @@ constexpr char PROVISIONING_SERVICE_UUID[] = "7b9f0010-6c5a-4e8f-9d3a-2f1b7c8e00
 constexpr char DEVICE_IDENTITY_CHARACTERISTIC_UUID[] = "7b9f0011-6c5a-4e8f-9d3a-2f1b7c8e0001";
 constexpr char WIFI_CONFIG_CHARACTERISTIC_UUID[] = "7b9f0012-6c5a-4e8f-9d3a-2f1b7c8e0001";
 constexpr char WIFI_STATUS_CHARACTERISTIC_UUID[] = "7b9f0013-6c5a-4e8f-9d3a-2f1b7c8e0001";
+constexpr char WIFI_REQUEST_RESULT_CHARACTERISTIC_UUID[] = "7b9f0014-6c5a-4e8f-9d3a-2f1b7c8e0001";
 
 class WifiConfigCallbacks : public BLECharacteristicCallbacks {
    public:
-    explicit WifiConfigCallbacks(WifiManager& wifiManager) : wifiManager_(wifiManager) {}
+    WifiConfigCallbacks(WifiManager& wifiManager, BLECharacteristic& requestResult)
+        : wifiManager_(wifiManager), requestResult_(requestResult) {}
 
     void onWrite(BLECharacteristic* characteristic) override {
         const std::string value = characteristic->getValue();
 
         if (value.empty() || value.find('\0') != std::string::npos) {
-            Serial.println("Invalid Wi-Fi configuration payload.");
+            Serial.println("Invalid Wi-Fi configuration payload");
+            reportResult("rejected");
             return;
         }
 
@@ -27,6 +30,7 @@ class WifiConfigCallbacks : public BLECharacteristicCallbacks {
 
         if (passwordPosition == std::string::npos || value.rfind(ssidPrefix, 0) != 0) {
             Serial.println("Invalid Wi-Fi configuration payload");
+            reportResult("rejected");
             return;
         }
 
@@ -37,18 +41,25 @@ class WifiConfigCallbacks : public BLECharacteristicCallbacks {
 
         if (ssid.empty() || ssid.size() > 32 || password.size() > 64) {
             Serial.println("Invalid Wi-Fi credential length");
+            reportResult("rejected");
             return;
         }
 
-        Serial.printf("Received Wi-Fi credentials for SSID: %s\n", ssid.c_str());
-
         const bool accepted = wifiManager_.connect(ssid.c_str(), password.c_str());
-        Serial.println(accepted ? "Wi-Fi request accepted into queue"
-                                : "Wi-Fi request rejected by manager");
+
+        reportResult(accepted ? "accepted" : "rejected");
     }
 
    private:
     WifiManager& wifiManager_;
+    BLECharacteristic& requestResult_;
+
+    void reportResult(const char* result) {
+        requestResult_.setValue(result);
+        requestResult_.notify();
+
+        Serial.printf("Wi-Fi request result: %s\n", result);
+    }
 };
 
 void BleProvisioningService::begin(BLEServer* server, const DeviceIdentity& identity,
@@ -61,7 +72,15 @@ void BleProvisioningService::begin(BLEServer* server, const DeviceIdentity& iden
     wifiConfigCharacteristic_ = provisioningService->createCharacteristic(
         WIFI_CONFIG_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_WRITE);
 
-    wifiConfigCharacteristic_->setCallbacks(new WifiConfigCallbacks(wifiManager));
+    wifiRequestResultCharacteristic_ = provisioningService->createCharacteristic(
+        WIFI_REQUEST_RESULT_CHARACTERISTIC_UUID,
+        BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
+
+    wifiRequestResultCharacteristic_->addDescriptor(new BLE2902());
+    wifiRequestResultCharacteristic_->setValue("idle");
+
+    wifiConfigCharacteristic_->setCallbacks(
+        new WifiConfigCallbacks(wifiManager, *wifiRequestResultCharacteristic_));
 
     char payload[128];
 
