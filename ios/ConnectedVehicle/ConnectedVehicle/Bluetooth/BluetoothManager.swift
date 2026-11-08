@@ -132,6 +132,10 @@ final class BluetoothManager: NSObject,
         _ central: CBCentralManager,
         didConnect peripheral: CBPeripheral
     ) {
+        guard peripheral === vehiclePeripheral else {
+            return
+        }
+
         cancelScanRetry()
         cancelConnectionDeadline()
         hasReceivedTelemetry = false
@@ -148,6 +152,10 @@ final class BluetoothManager: NSObject,
         didFailToConnect peripheral: CBPeripheral,
         error: Error?
     ) {
+        guard peripheral === vehiclePeripheral else {
+            return
+        }
+        
         clearConnectionState()
         
         if let error {
@@ -164,6 +172,10 @@ final class BluetoothManager: NSObject,
         didDisconnectPeripheral peripheral: CBPeripheral,
         error: (any Error)?
     ) {
+        guard peripheral === vehiclePeripheral else {
+            return
+        }
+        
         clearConnectionState()
         
         if let error {
