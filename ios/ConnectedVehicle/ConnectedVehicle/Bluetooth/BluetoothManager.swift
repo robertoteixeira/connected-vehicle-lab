@@ -49,6 +49,10 @@ final class BluetoothManager: NSObject,
         string: "7B9F0013-6C5A-4E8F-9D3A-2F1B7C8E0001"
     )
     
+    private let wifiRequestResultCharacteristicUUID = CBUUID(
+        string: "7B9F0014-6C5A-4E8F-9D3A-2F1B7C8E0001"
+    )
+    
     @Published private(set) var vehicleState = VehicleState()
     @Published private(set) var deviceIdentity: DeviceIdentity?
     @Published private(set) var hasReceivedTelemetry = false
@@ -60,6 +64,7 @@ final class BluetoothManager: NSObject,
     @Published private(set) var bluetoothState: CBManagerState = .unknown
     @Published private(set) var connectionPhase: BLEConnectionPhase = .idle
     @Published private(set) var discoveredVehicles: [DiscoveredVehicle] = []
+    @Published private(set) var canReceiveWifiRequestResults = false
 
     var isConnected: Bool {
         connectionPhase == .connected
@@ -68,6 +73,7 @@ final class BluetoothManager: NSObject,
     var canStartWifiConfiguration: Bool {
         isConnected &&
         canConfigureWifi &&
+        canReceiveWifiRequestResults &&
         !isSendingWifiConfiguration &&
         !isWifiProvisioningPending &&
         wifiProvisioningState != nil &&
@@ -283,7 +289,8 @@ final class BluetoothManager: NSObject,
                     [
                         deviceIdentityCharacteristicUUID,
                         wifiConfigCharacteristicUUID,
-                        wifiStatusCharacteristicUUID
+                        wifiStatusCharacteristicUUID,
+                        wifiRequestResultCharacteristicUUID
                     ],
                     for: service
                 )
@@ -321,6 +328,8 @@ final class BluetoothManager: NSObject,
                 print("Wi-Fi configuration characteristic ready")
             } else if characteristic.uuid == wifiStatusCharacteristicUUID {
                 peripheral.setNotifyValue(true, for: characteristic)
+            } else if characteristic.uuid == wifiRequestResultCharacteristicUUID {
+                peripheral.setNotifyValue(true, for: characteristic)
             }
         }
     }
@@ -332,6 +341,26 @@ final class BluetoothManager: NSObject,
     ) {
         if let error {
             print("Value update failed: \(error)")
+            return
+        }
+        
+        if characteristic.uuid == wifiRequestResultCharacteristicUUID {
+            guard peripheral === vehiclePeripheral,
+                  let data = characteristic.value,
+                  let payload = String(data: data, encoding: .utf8),
+                  let result = WifiRequestResult(rawValue: payload) else {
+                print("Invalid Wi-Fi request result")
+                return
+            }
+
+            print("Wi-Fi request result: \(result.rawValue)")
+
+            if result == .rejected && isWifiProvisioningPending {
+                cancelWifiResultDeadline()
+                isWifiProvisioningPending = false
+                wifiWriteMessage = "Device rejected the Wi-Fi request. Check the network details."
+            }
+
             return
         }
 
@@ -390,14 +419,22 @@ final class BluetoothManager: NSObject,
         didUpdateNotificationStateFor characteristic: CBCharacteristic,
         error: Error?
     ) {
+        guard peripheral === vehiclePeripheral else {
+            return
+        }
+
+        if characteristic.uuid == wifiRequestResultCharacteristicUUID {
+            canReceiveWifiRequestResults =
+                error == nil && characteristic.isNotifying
+        }
+
         if let error {
             print("Notification subscription failed: \(error)")
             return
         }
-        
+
         if characteristic.uuid == wifiStatusCharacteristicUUID,
-           characteristic.isNotifying
-        {
+           characteristic.isNotifying {
             peripheral.readValue(for: characteristic)
         }
 
@@ -426,13 +463,9 @@ final class BluetoothManager: NSObject,
             
             wifiWriteMessage = "Could not send credentials. Please try again."
             print("Wi-Fi configuration write failed: \(error)")
-        } else {
-            wifiWriteMessage =
-                "Bluetooth write acknowledged."
-            
-            if isWifiProvisioningPending {
-                startWifiResultDeadline()
-            }
+        } else if isWifiProvisioningPending {
+            wifiWriteMessage = "Bluetooth write acknowledged."
+            startWifiResultDeadline()
         }
     }
     
@@ -553,6 +586,7 @@ final class BluetoothManager: NSObject,
         canConfigureWifi = false
         hasReceivedTelemetry = false
         deviceIdentity = nil
+        canReceiveWifiRequestResults = false
                 
         vehiclePeripheral = nil
         vehicleStateCharacteristic = nil

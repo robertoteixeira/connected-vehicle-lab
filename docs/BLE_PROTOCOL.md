@@ -27,6 +27,7 @@ callback, the client resumes scanning and waits for a new selection.
 | Device identity | `7b9f0011-6c5a-4e8f-9d3a-2f1b7c8e0001` | Read |
 | Wi-Fi configuration | `7b9f0012-6c5a-4e8f-9d3a-2f1b7c8e0001` | Write |
 | Wi-Fi provisioning status | `7b9f0013-6c5a-4e8f-9d3a-2f1b7c8e0001` | Read, Notify |
+| Wi-Fi request result | `7b9f0014-6c5a-4e8f-9d3a-2f1b7c8e0001` | Read, Notify |
 
 ## Vehicle state
 
@@ -95,14 +96,38 @@ Rules:
 A successful BLE write acknowledgment confirms the transport write,
 not credential acceptance or Wi-Fi connection success.
 
-Malformed requests are currently rejected through serial logging;
-there is no application-level rejection response.
+Malformed requests are rejected without starting a connection attempt.
+The Wi-Fi request result characteristic reports rejection, including
+when the manager cannot accept a request into its queue.
 
 The firmware holds one queued request. A newer request replaces any
 request that has not yet been consumed by the main loop. A request
 received during an active attempt starts a new attempt and resets its
 deadline. Clients should wait for the current attempt's result before
 submitting another request.
+
+## Wi-Fi request result
+
+| Payload | Meaning |
+| --- | --- |
+| `idle` | No request has been processed since boot |
+| `accepted` | The most recent request was accepted into the queue |
+| `rejected` | Parsing, validation, or queue submission failed |
+
+Subscribe before submitting credentials. The firmware sends a notification
+for every processed write, including repeated identical results. A read
+returns the latest stored result, which may belong to a previous request;
+clients must not use that snapshot as the outcome of a new request.
+
+Acceptance does not confirm the SSID exists or the password is correct.
+Use provisioning status for the subsequent connection outcome. Request
+results, provisioning status, and BLE write acknowledgments can arrive
+in different orders. A later write acknowledgment must not overwrite
+a rejection already received for the pending request.
+
+Results have no request identifiers or detailed rejection reason codes.
+The current protocol assumes clients coordinate one request at a time;
+it does not isolate requests made by multiple clients.
 
 ## Wi-Fi provisioning status
 
@@ -125,7 +150,7 @@ currently report a later loss of Wi-Fi connectivity.
 ## Current limitations
 
 - No protocol version or request identifiers.
-- No application-level credential rejection response.
+- Request rejections do not include detailed reason codes or request correlation.
 - No BLE pairing or encrypted access configured by this firmware.
 - Credentials are not persisted by application code; Wi-Fi stack
   persistence behavior is not defined by this protocol.

@@ -36,6 +36,7 @@ C++ firmware built with the Arduino framework and PlatformIO for an ESP32 `esp32
 - BLE services for vehicle state, device identity, Wi-Fi credentials, and provisioning status.
 - Wi-Fi requests passed from the BLE callback to the main loop through a one-slot FreeRTOS queue. A newer request replaces a queued request; connection attempts run in the main loop rather than the BLE write callback.
 - Explicit provisioning states and a 15-second Wi-Fi attempt deadline.
+- A separate BLE request-result characteristic reports whether each credential write was accepted into the queue or rejected before an attempt starts.
 - BLE advertising restarted after disconnection.
 
 The simulation uses 800 idle RPM, 6000 maximum RPM, and a maximum target speed of 180 km/h. Turning ignition off resets speed and RPM to zero; throttle and headlight state are retained.
@@ -113,6 +114,7 @@ The ESP32 advertises as `ConnectedVehicle`. The app display name is `Vehicle Lab
 | Device identity | Read | `id=VEH-A1B2C3D4E5F6,hw=ESP32-DEVKIT-V1,fw=0.1.0` |
 | Wi-Fi configuration | Write | `ssid=Lab Network,password=example-password` |
 | Wi-Fi provisioning status | Read, Notify | `idle`, `connecting`, `connected`, `timed_out` |
+| Wi-Fi request result | Read, Notify | `idle`, `accepted`, `rejected` |
 
 See [BLE protocol](docs/BLE_PROTOCOL.md) for UUIDs, payload rules, notification behavior, queue semantics, and limitations.
 
@@ -160,7 +162,7 @@ docs/BLE_PROTOCOL.md                  BLE protocol reference
 The ESP32 and iOS app work together on real hardware. Current limitations include:
 
 - No protocol version or request identifiers.
-- Invalid credential payloads are rejected through serial logging, without an application-level rejection response.
+- Request rejections have no detailed reason codes or request correlation; clients must coordinate one request at a time.
 - BLE pairing and encrypted access are not configured by the firmware.
 - Saved selection uses a local CoreBluetooth peripheral UUID, not authenticated device identity. Discovery results are not continuously expired when devices leave range.
 - No implemented background BLE workflow or continuous Wi-Fi connection-loss reporting.
