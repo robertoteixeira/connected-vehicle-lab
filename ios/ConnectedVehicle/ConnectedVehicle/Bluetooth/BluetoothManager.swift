@@ -21,6 +21,7 @@ final class BluetoothManager: NSObject,
         "selectedVehiclePeripheralID"
     private var vehicleStateCharacteristic: CBCharacteristic?
     private var wifiConfigCharacteristic: CBCharacteristic?
+    private var wifiStatusCharacteristic: CBCharacteristic?
     private var wifiWriteDeadlineTask: Task<Void, Never>?
     private var wifiResultDeadlineTask: Task<Void, Never>?
     private var connectionDeadlineTask: Task<Void, Never>?
@@ -329,6 +330,7 @@ final class BluetoothManager: NSObject,
                 
                 print("Wi-Fi configuration characteristic ready")
             } else if characteristic.uuid == wifiStatusCharacteristicUUID {
+                wifiStatusCharacteristic = characteristic
                 peripheral.setNotifyValue(true, for: characteristic)
             } else if characteristic.uuid == wifiRequestResultCharacteristicUUID {
                 peripheral.setNotifyValue(true, for: characteristic)
@@ -597,6 +599,7 @@ final class BluetoothManager: NSObject,
         vehiclePeripheral = nil
         vehicleStateCharacteristic = nil
         wifiConfigCharacteristic = nil
+        wifiStatusCharacteristic = nil
         isSendingWifiConfiguration = false
         wifiWriteMessage = nil
         wifiProvisioningState = nil
@@ -652,6 +655,24 @@ final class BluetoothManager: NSObject,
                   self.connectionPhase == .connected,
                   self.isWifiProvisioningPending else {
                 return
+            }
+            
+            if let characteristic = self.wifiStatusCharacteristic {
+                print("Wi-Fi result overdue. Reading current status over BLE.")
+                peripheral.readValue(for: characteristic)
+                
+                do {
+                    try await Task.sleep(for: .seconds(5))
+                } catch {
+                    return
+                }
+                
+                guard self.centralManager.state == .poweredOn,
+                      self.vehiclePeripheral == peripheral,
+                      self.connectionPhase == .connected,
+                      self.isWifiProvisioningPending else {
+                    return
+                }
             }
             
             print("Wi-Fi result deadline expired. Reconnecting BLE.")

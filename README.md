@@ -82,7 +82,7 @@ A native **SwiftUI + CoreBluetooth** app targeting **iOS 17.6 and later**.
 - Provides a manual Wi-Fi form with shared validation for UTF-8 byte lengths, separator compatibility, and embedded null characters.
 - Distinguishes a BLE write acknowledgment from the ESP32's Wi-Fi provisioning result.
 - Subscribes to request-result notifications before allowing provisioning. Device rejection releases the pending request and displays an error; a later BLE acknowledgment does not overwrite that rejection.
-- Keeps provisioning pending until a result, write error, or disconnection. If no result arrives within 25 seconds after acknowledgment, reconnects BLE and reads the device's current status.
+- Keeps provisioning pending until a result, write error, or disconnection. If no result arrives within 25 seconds after acknowledgment, reads the device's current status over BLE. If the result is still pending after another 5 seconds, reconnects to the selected vehicle.
 - If a BLE write acknowledgment takes more than 10 seconds, reconnects to the selected vehicle. Sending credentials again requires a new submission.
 - Uses main-actor-isolated observable state and cancellable tasks for connection and provisioning-result deadlines. Telemetry and provisioning have dedicated SwiftUI views.
 
