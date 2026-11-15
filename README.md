@@ -81,7 +81,9 @@ A native **SwiftUI + CoreBluetooth** app targeting **iOS 17.6 and later**.
 - Rejects malformed or duplicate telemetry and identity fields, invalid booleans, non-finite numbers, and out-of-range telemetry values.
 - Provides a manual Wi-Fi form with shared validation for UTF-8 byte lengths, separator compatibility, and embedded null characters.
 - Distinguishes a BLE write acknowledgment from the ESP32's Wi-Fi provisioning result.
+- Subscribes to request-result notifications before allowing provisioning. Device rejection releases the pending request and displays an error; a later BLE acknowledgment does not overwrite that rejection.
 - Keeps provisioning pending until a result, write error, or disconnection. If no result arrives within 25 seconds after acknowledgment, displays a warning while retaining the pending state.
+- If a BLE write acknowledgment takes more than 10 seconds, reconnects to the selected vehicle. Sending credentials again requires a new submission.
 - Uses main-actor-isolated observable state and cancellable tasks for connection and provisioning-result deadlines. Telemetry and provisioning have dedicated SwiftUI views.
 
 Wi-Fi status describes the last provisioning attempt. A successful attempt is not continuous monitoring of the device's Wi-Fi connection.
@@ -170,7 +172,7 @@ The ESP32 and iOS app work together on real hardware. Current limitations includ
 
 Development proceeds in this order:
 
-1. **Finish the iOS experience and device interaction:** provisioning rejection responses, asynchronous recovery, access protection, UI polish, and verification.
+1. **Finish the iOS experience and device interaction:** asynchronous recovery, access protection, UI polish, and verification.
 2. **Build the backend and Azure IoT integration:** device authentication, cloud telemetry ingestion, processing, storage, and APIs. Concrete service choices will be made during that phase.
 3. **Explore additional mobile implementations:** native Android, Flutter, and React Native.
 4. **Extract SDKs:** identify reusable protocol, validation, and communication components from the completed implementations.

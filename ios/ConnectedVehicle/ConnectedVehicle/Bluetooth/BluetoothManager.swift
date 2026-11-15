@@ -21,6 +21,7 @@ final class BluetoothManager: NSObject,
         "selectedVehiclePeripheralID"
     private var vehicleStateCharacteristic: CBCharacteristic?
     private var wifiConfigCharacteristic: CBCharacteristic?
+    private var wifiWriteDeadlineTask: Task<Void, Never>?
     private var wifiResultDeadlineTask: Task<Void, Never>?
     private var connectionDeadlineTask: Task<Void, Never>?
     private var scanRetryTask: Task<Void, Never>?
@@ -197,6 +198,7 @@ final class BluetoothManager: NSObject,
         
         UserDefaults.standard.removeObject(forKey: Self.selectedPeripheralDefaultsKey)
         
+        cancelWifiWriteDeadline()
         cancelConnectionDeadline()
         cancelWifiResultDeadline()
         
@@ -450,11 +452,13 @@ final class BluetoothManager: NSObject,
         error: Error?
     ) {
         guard peripheral === vehiclePeripheral,
+              connectionPhase == .connected,
               characteristic.uuid == wifiConfigCharacteristicUUID,
               isSendingWifiConfiguration else {
             return
         }
 
+        cancelWifiWriteDeadline()
         isSendingWifiConfiguration = false
 
         if let error {
@@ -503,6 +507,7 @@ final class BluetoothManager: NSObject,
         wifiWriteMessage = nil
         isSendingWifiConfiguration = true
         isWifiProvisioningPending = true
+        startWifiWriteDeadline(for: peripheral)
 
         peripheral.writeValue(
             data,
@@ -577,6 +582,7 @@ final class BluetoothManager: NSObject,
     }
     
     private func clearConnectionState() {
+        cancelWifiWriteDeadline()
         discoveredVehicles = []
         
         cancelScanRetry()
@@ -597,6 +603,35 @@ final class BluetoothManager: NSObject,
         isWifiProvisioningPending = false
     }
     
+    private func startWifiWriteDeadline(for peripheral: CBPeripheral) {
+        cancelWifiWriteDeadline()
+
+        wifiWriteDeadlineTask = Task { [weak self] in
+            do {
+                try await Task.sleep(for: .seconds(10))
+            } catch {
+                return
+            }
+
+            guard let self,
+                  self.centralManager.state == .poweredOn,
+                  self.vehiclePeripheral === peripheral,
+                  self.connectionPhase == .connected,
+                  self.isSendingWifiConfiguration else {
+                return
+            }
+
+            print("Wi-Fi write acknowledgment timed out; reconnecting BLE")
+            self.connectionPhase = .disconnecting
+            self.centralManager.cancelPeripheralConnection(peripheral)
+        }
+    }
+
+    private func cancelWifiWriteDeadline() {
+        wifiWriteDeadlineTask?.cancel()
+        wifiWriteDeadlineTask = nil
+    }
+
     private func startWifiResultDeadline() {
         cancelWifiResultDeadline()
         
