@@ -8,87 +8,97 @@
 import SwiftUI
 
 struct WifiProvisioningView: View {
-    @ObservedObject var bluetoothManager: BluetoothManager
+  @ObservedObject var bluetoothManager: BluetoothManager
 
-    @State private var wifiSSID = ""
-    @State private var wifiPassword = ""
+  @State private var wifiSSID = ""
+  @State private var wifiPassword = ""
 
-    private var canSubmitWifi: Bool {
-        bluetoothManager.canStartWifiConfiguration &&
-        WifiCredentials(
-            ssid: wifiSSID,
-            password: wifiPassword
-        ) != nil
-    }
+  private enum Field: Hashable {
+    case ssid
+    case password
+  }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Configure device Wi-Fi")
-                .font(.headline)
+  @FocusState private var focusedField: Field?
 
-            TextField("Network name (SSID)", text: $wifiSSID)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .textFieldStyle(.roundedBorder)
+  private var canSubmitWifi: Bool {
+    bluetoothManager.canStartWifiConfiguration
+      && WifiCredentials(
+        ssid: wifiSSID,
+        password: wifiPassword
+      ) != nil
+  }
 
-            SecureField("Password", text: $wifiPassword)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .textFieldStyle(.roundedBorder)
+  var body: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      Text("Configure device Wi-Fi")
+        .font(.headline)
 
-            Button("Send Wi-Fi credentials") {
-                if bluetoothManager.sendWifiConfiguration(
-                    ssid: wifiSSID,
-                    password: wifiPassword
-                ) {
-                    wifiPassword = ""
-                }
-            }
-            .buttonStyle(.borderedProminent)
-            .disabled(!canSubmitWifi)
+      TextField("Network name (SSID)", text: $wifiSSID)
+        .textInputAutocapitalization(.never)
+        .autocorrectionDisabled()
+        .textFieldStyle(.roundedBorder)
+        .focused($focusedField, equals: .ssid)
 
-            if bluetoothManager.isSendingWifiConfiguration {
-                ProgressView("Sending credentials…")
-            }
+      SecureField("Password", text: $wifiPassword)
+        .textInputAutocapitalization(.never)
+        .autocorrectionDisabled()
+        .textFieldStyle(.roundedBorder)
+        .focused($focusedField, equals: .password)
 
-            if let message = bluetoothManager.wifiWriteMessage {
-                Text(message)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Device Wi-Fi setup")
-                    .font(.subheadline)
-                    .bold()
-
-                switch bluetoothManager.wifiProvisioningState {
-                case .idle:
-                    Text("No connection attempt started.")
-
-                case .connecting:
-                    ProgressView("Connecting to Wi-Fi…")
-
-                case .connected:
-                    Label(
-                        "Last connection attempt succeeded",
-                        systemImage: "checkmark.circle.fill"
-                    )
-                    .foregroundStyle(.green)
-
-                case .timedOut:
-                    Label(
-                        "Connection timed out. Check the network details and try again.",
-                        systemImage: "exclamationmark.triangle"
-                    )
-                    .foregroundStyle(.orange)
-
-                case nil:
-                    Text("Wi-Fi setup status unavailable.")
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .font(.footnote)
+      Button("Send Wi-Fi credentials") {
+        if bluetoothManager.sendWifiConfiguration(
+          ssid: wifiSSID,
+          password: wifiPassword
+        ) {
+          wifiPassword = ""
+          focusedField = nil
         }
+      }
+      .buttonStyle(.borderedProminent)
+      .disabled(!canSubmitWifi)
+
+      if bluetoothManager.isSendingWifiConfiguration {
+        ProgressView("Sending credentials…")
+      }
+
+      if let message = bluetoothManager.wifiWriteMessage {
+        Text(message)
+          .font(.footnote)
+          .foregroundStyle(.secondary)
+      }
+
+      VStack(alignment: .leading, spacing: 6) {
+        Text("Device Wi-Fi setup")
+          .font(.subheadline)
+          .bold()
+
+        switch bluetoothManager.wifiProvisioningState {
+        case .idle:
+          Text("No connection attempt started.")
+
+        case .connecting:
+          ProgressView("Connecting to Wi-Fi…")
+
+        case .connected:
+          Label(
+            "Last connection attempt succeeded",
+            systemImage: "checkmark.circle.fill"
+          )
+          .foregroundStyle(.green)
+
+        case .timedOut:
+          Label(
+            "Last Wi-Fi connection attempt timed out.",
+            systemImage: "exclamationmark.triangle"
+          )
+          .foregroundStyle(.orange)
+
+        case nil:
+          Text("Wi-Fi setup status unavailable.")
+            .foregroundStyle(.secondary)
+        }
+      }
+      .font(.footnote)
     }
+  }
 }
