@@ -635,6 +635,10 @@ final class BluetoothManager: NSObject,
     private func startWifiResultDeadline() {
         cancelWifiResultDeadline()
         
+        guard let peripheral = vehiclePeripheral else {
+            return
+        }
+
         wifiResultDeadlineTask = Task { [weak self] in
             do {
                 try await Task.sleep(for: .seconds(25))
@@ -643,11 +647,16 @@ final class BluetoothManager: NSObject,
             }
             
             guard let self,
+                  self.centralManager.state == .poweredOn,
+                  self.vehiclePeripheral === peripheral,
+                  self.connectionPhase == .connected,
                   self.isWifiProvisioningPending else {
                 return
             }
             
-            self.wifiWriteMessage = "No Wi-Fi result received. Reconnect Bluetooth before trying again."
+            print("Wi-Fi result deadline expired. Reconnecting BLE.")
+            self.connectionPhase = .disconnecting
+            self.centralManager.cancelPeripheralConnection(peripheral)
         }
     }
     
