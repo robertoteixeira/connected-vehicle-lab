@@ -475,16 +475,16 @@ final class BluetoothManager: NSObject,
         }
     }
     
-    func sendWifiConfiguration(ssid: String, password: String) {
+    func sendWifiConfiguration(ssid: String, password: String) -> Bool {
         guard canStartWifiConfiguration else {
-            return
+            return false
         }
 
         guard isConnected,
               let peripheral = vehiclePeripheral,
               let characteristic = wifiConfigCharacteristic else {
             wifiWriteMessage = "Wi-Fi configuration is unavailable."
-            return
+            return false
         }
 
         guard let credentials = WifiCredentials(
@@ -492,7 +492,7 @@ final class BluetoothManager: NSObject,
             password: password
         ) else {
             wifiWriteMessage = "Network details are invalid."
-            return
+            return false
         }
 
         let payload =
@@ -503,7 +503,7 @@ final class BluetoothManager: NSObject,
             for: .withResponse
         ) else {
             wifiWriteMessage = "Credentials exceed the Bluetooth write limit."
-            return
+            return false
         }
 
         wifiWriteMessage = nil
@@ -516,6 +516,7 @@ final class BluetoothManager: NSObject,
             for: characteristic,
             type: .withResponse
         )
+        return true
     }
     
     private func startConnectionDeadline(for peripheral: CBPeripheral) {

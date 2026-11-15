@@ -37,10 +37,12 @@ struct WifiProvisioningView: View {
                 .textFieldStyle(.roundedBorder)
 
             Button("Send Wi-Fi credentials") {
-                bluetoothManager.sendWifiConfiguration(
+                if bluetoothManager.sendWifiConfiguration(
                     ssid: wifiSSID,
                     password: wifiPassword
-                )
+                ) {
+                    wifiPassword = ""
+                }
             }
             .buttonStyle(.borderedProminent)
             .disabled(!canSubmitWifi)
