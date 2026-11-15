@@ -28,6 +28,20 @@ struct WifiProvisioningView: View {
       ) != nil
   }
 
+  private func submitWifiCredentials() {
+    guard canSubmitWifi else {
+      return
+    }
+
+    if bluetoothManager.sendWifiConfiguration(
+      ssid: wifiSSID,
+      password: wifiPassword
+    ) {
+      wifiPassword = ""
+      focusedField = nil
+    }
+  }
+
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
       Text("Configure device Wi-Fi")
@@ -38,24 +52,24 @@ struct WifiProvisioningView: View {
         .autocorrectionDisabled()
         .textFieldStyle(.roundedBorder)
         .focused($focusedField, equals: .ssid)
+        .submitLabel(.next)
+        .onSubmit {
+          focusedField = .password
+        }
 
       SecureField("Password", text: $wifiPassword)
         .textInputAutocapitalization(.never)
         .autocorrectionDisabled()
         .textFieldStyle(.roundedBorder)
         .focused($focusedField, equals: .password)
-
-      Button("Send Wi-Fi credentials") {
-        if bluetoothManager.sendWifiConfiguration(
-          ssid: wifiSSID,
-          password: wifiPassword
-        ) {
-          wifiPassword = ""
-          focusedField = nil
+        .submitLabel(.go)
+        .onSubmit {
+          submitWifiCredentials()
         }
-      }
-      .buttonStyle(.borderedProminent)
-      .disabled(!canSubmitWifi)
+
+      Button("Send Wi-Fi credentials", action: submitWifiCredentials)
+        .buttonStyle(.borderedProminent)
+        .disabled(!canSubmitWifi)
 
       if bluetoothManager.isSendingWifiConfiguration {
         ProgressView("Sending credentials…")
