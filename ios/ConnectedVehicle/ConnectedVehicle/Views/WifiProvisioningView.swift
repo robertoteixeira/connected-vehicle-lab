@@ -28,6 +28,12 @@ struct WifiProvisioningView: View {
 		bluetoothManager.canStartWifiConfiguration && hasValidWifiCredentials
 	}
 
+	private var isWaitingForWifiSetup: Bool {
+		!bluetoothManager.canConfigureWifi
+			|| !bluetoothManager.canReceiveWifiRequestResults
+			|| bluetoothManager.wifiProvisioningState == nil
+	}
+
 	private func submitWifiCredentials() {
 		guard canSubmitWifi else {
 			return
@@ -79,6 +85,12 @@ struct WifiProvisioningView: View {
 			Button("Send Wi-Fi credentials", action: submitWifiCredentials)
 				.buttonStyle(.borderedProminent)
 				.disabled(!canSubmitWifi)
+
+			if isWaitingForWifiSetup {
+				Text("Preparing device Wi-Fi setup...")
+					.font(.footnote)
+					.foregroundStyle(.secondary)
+			}
 
 			if bluetoothManager.isSendingWifiConfiguration {
 				ProgressView("Sending credentials…")
