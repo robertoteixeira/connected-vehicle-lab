@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 
+#include "AzureIoTManager.h"
 #include "BleProvisioningService.h"
 #include "BleVehicleService.h"
 #include "DebouncedButton.h"
@@ -39,6 +40,7 @@ DebouncedButton headlightButton(HEADLIGHT_BUTTON_PIN, BUTTON_DEBOUNCE_MS);
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET_PIN);
 BleVehicleService bleVehicleService;
 WifiManager wifiManager;
+AzureIoTManager azureIoTManager;
 
 unsigned long lastSimulationUpdateMs = 0;
 unsigned long lastTelemetryMs = 0;
@@ -180,6 +182,10 @@ void setup() {
 
     wifiManager.begin();
 
+    if (!azureIoTManager.begin()) {
+        Serial.println("Azure MQTT client initialization failed");
+    }
+
     BLEDevice::init("ConnectedVehicle");
     BLEServer* bleServer = BLEDevice::createServer();
     bleServer->setCallbacks(new VehicleServerCallbacks());
@@ -208,6 +214,7 @@ void setup() {
 void loop() {
     wifiManager.update();
     bleProvisioningService.update(wifiManager.provisioningState());
+    azureIoTManager.update();
 
     ignitionButton.update();
     const bool buttonPressed = ignitionButton.isPressed();
