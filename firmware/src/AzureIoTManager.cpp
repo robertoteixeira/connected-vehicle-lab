@@ -6,6 +6,8 @@
 
 #include "AzureIoTConfig.h"
 
+extern const char azureRootCertificates[] asm("_binary_certs_azure_roots_pem_start");
+
 bool AzureIoTManager::begin() {
     if (client_ != nullptr) {
         return true;
@@ -15,6 +17,7 @@ bool AzureIoTManager::begin() {
     config.host = AzureIoTConfig::HOST_NAME;
     config.port = 8883;
     config.transport = MQTT_TRANSPORT_OVER_SSL;
+    config.cert_pem = azureRootCertificates;
     config.client_id = AzureIoTConfig::DEVICE_ID;
 
     client_ = esp_mqtt_client_init(&config);
