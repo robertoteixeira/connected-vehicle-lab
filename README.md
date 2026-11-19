@@ -2,7 +2,7 @@
 
 A connected-device portfolio project built with ESP32 firmware and **Vehicle Lab**, a native SwiftUI and CoreBluetooth iOS app. Physical controls drive a simulated vehicle; its state appears on an OLED and streams to the app over BLE. The app also reads device identity and configures the ESP32's Wi-Fi connection.
 
-Values are simulated. This project does not interface with a real vehicle or CAN bus. Wi-Fi provisioning works locally; backend and Azure IoT integration are planned, not implemented.
+Values are simulated. This project does not interface with a real vehicle or CAN bus. Wi-Fi provisioning works locally; Azure IoT connectivity is in progress, and the backend is not implemented.
 
 ## System overview
 
@@ -160,6 +160,10 @@ docs/BLE_PROTOCOL.md                  BLE protocol reference
 ```
 
 ## Status and next steps
+
+Azure IoT Hub message sending and monitoring have been verified with a CLI test device. The firmware now includes network time synchronization, SAS token generation, and ESP-MQTT connection setup. Device-to-cloud telemetry is not working yet: the ESP32 encounters memory allocation failures during TLS setup/signature verification while BLE and Wi-Fi are active. Classic Bluetooth controller memory has been released; migration from the current Bluedroid BLE host to NimBLE is the next memory-reduction step to evaluate. Temporary TLS and heap diagnostics remain in the firmware, which currently uses ESP-IDF's built-in CA bundle. SAS tokens last one hour; automatic renewal is not implemented.
+
+The device key belongs in `firmware/include/AzureIoTSecrets.h.local`, which is ignored by Git. Define `AzureIoTSecrets::DEVICE_KEY` as a `constexpr char[]` containing the registered device's primary key. Never commit this file or print the key or generated SAS token. Configure the hub's **Device hostname** and registered device ID in `firmware/include/AzureIoTConfig.h`.
 
 The ESP32 and iOS app work together on real hardware. Current limitations include:
 

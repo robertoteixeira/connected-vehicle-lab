@@ -1,6 +1,8 @@
 #include <Adafruit_SSD1306.h>
 #include <Arduino.h>
 #include <Wire.h>
+#include <esp_bt.h>
+#include <esp_err.h>
 
 #include "AzureIoTManager.h"
 #include "BleProvisioningService.h"
@@ -185,6 +187,15 @@ void setup() {
     if (!azureIoTManager.begin()) {
         Serial.println("Azure MQTT client initialization failed");
     }
+
+    // Release unused Classic Bluetooth memory before starting the BLE controller.
+    ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
+
+    esp_bt_controller_config_t bluetoothConfig = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+    bluetoothConfig.mode = ESP_BT_MODE_BLE;
+
+    ESP_ERROR_CHECK(esp_bt_controller_init(&bluetoothConfig));
+    ESP_ERROR_CHECK(esp_bt_controller_enable(ESP_BT_MODE_BLE));
 
     BLEDevice::init("ConnectedVehicle");
     BLEServer* bleServer = BLEDevice::createServer();
