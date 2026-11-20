@@ -2,7 +2,6 @@
 
 #include <Arduino.h>
 #include <WiFi.h>
-#include <esp_heap_caps.h>
 #include <mbedtls/x509_crt.h>
 #include <time.h>
 
@@ -12,8 +11,6 @@
 // Arduino shadows ESP-IDF's esp_crt_bundle.h with a different API. Declare the
 // ESP-IDF function linked from libmbedtls to use its built-in CA bundle.
 extern "C" esp_err_t esp_crt_bundle_attach(void* conf);
-
-extern const char azureRootCertificates[] asm("_binary_certs_azure_roots_pem_start");
 
 namespace {
 void onMqttEvent(void* handlerArgs, esp_event_base_t eventBase, int32_t eventId, void* eventData) {
@@ -46,14 +43,6 @@ void onMqttEvent(void* handlerArgs, esp_event_base_t eventBase, int32_t eventId,
                 }
             }
 
-            Serial.printf("Current Unix time: %lu\n",
-                          static_cast<unsigned long>(time(nullptr)));
-
-            Serial.printf("At MQTT error: free internal heap=%u, largest block=%u\n",
-                          static_cast<unsigned>(
-                              heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)),
-                          static_cast<unsigned>(heap_caps_get_largest_free_block(
-                              MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)));
             break;
         }
 
@@ -67,27 +56,6 @@ bool AzureIoTManager::begin() {
     if (client_ != nullptr) {
         return true;
     }
-
-    // Temporary diagnostic: confirm the running firmware can parse every embedded root.
-    mbedtls_x509_crt roots;
-    mbedtls_x509_crt_init(&roots);
-
-    const int parseResult = mbedtls_x509_crt_parse(
-        &roots, reinterpret_cast<const unsigned char*>(azureRootCertificates),
-        strlen(azureRootCertificates) + 1);
-
-    Serial.printf("Embedded CA parse result: %d\n", parseResult);
-
-    unsigned rootCount = 0;
-
-    for (const mbedtls_x509_crt* root = &roots;
-         root != nullptr && root->raw.p != nullptr; root = root->next) {
-        char subject[256] = {};
-        mbedtls_x509_dn_gets(subject, sizeof(subject), &root->subject);
-        Serial.printf("Embedded CA %u: %s\n", ++rootCount, subject);
-    }
-
-    mbedtls_x509_crt_free(&roots);
 
     esp_mqtt_client_config_t config = {};
     config.host = AzureIoTConfig::HOST_NAME;
@@ -173,12 +141,6 @@ void AzureIoTManager::update() {
         Serial.printf("Azure MQTT configuration failed: %d\n", result);
         return;
     }
-
-    Serial.printf(
-        "Before MQTT start: free internal heap=%u, largest block=%u\n",
-        static_cast<unsigned>(heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)),
-        static_cast<unsigned>(
-            heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)));
 
     result = esp_mqtt_client_start(client_);
 

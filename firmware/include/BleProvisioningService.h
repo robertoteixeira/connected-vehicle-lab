@@ -1,19 +1,19 @@
 #pragma once
 
-#include <BLEDevice.h>
+#include <NimBLEDevice.h>
 
 #include "DeviceIdentity.h"
 #include "WifiManager.h"
 
 class BleProvisioningService {
    public:
-    void begin(BLEServer* server, const DeviceIdentity& identity, WifiManager& wifiManager);
+    void begin(NimBLEServer* server, const DeviceIdentity& identity, WifiManager& wifiManager);
     void update(WifiProvisioningState state);
 
    private:
-    BLECharacteristic* deviceIdentityCharacteristic_ = nullptr;
-    BLECharacteristic* wifiConfigCharacteristic_ = nullptr;
-    BLECharacteristic* wifiStatusCharacteristic_ = nullptr;
+    NimBLECharacteristic* deviceIdentityCharacteristic_ = nullptr;
+    NimBLECharacteristic* wifiConfigCharacteristic_ = nullptr;
+    NimBLECharacteristic* wifiStatusCharacteristic_ = nullptr;
     WifiProvisioningState lastWifiState_ = WifiProvisioningState::Idle;
-    BLECharacteristic* wifiRequestResultCharacteristic_ = nullptr;
+    NimBLECharacteristic* wifiRequestResultCharacteristic_ = nullptr;
 };

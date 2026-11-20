@@ -1,7 +1,6 @@
 #include "BleProvisioningService.h"
 
 #include <Arduino.h>
-#include <BLE2902.h>
 
 constexpr char PROVISIONING_SERVICE_UUID[] = "7b9f0010-6c5a-4e8f-9d3a-2f1b7c8e0001";
 constexpr char DEVICE_IDENTITY_CHARACTERISTIC_UUID[] = "7b9f0011-6c5a-4e8f-9d3a-2f1b7c8e0001";
@@ -9,12 +8,12 @@ constexpr char WIFI_CONFIG_CHARACTERISTIC_UUID[] = "7b9f0012-6c5a-4e8f-9d3a-2f1b
 constexpr char WIFI_STATUS_CHARACTERISTIC_UUID[] = "7b9f0013-6c5a-4e8f-9d3a-2f1b7c8e0001";
 constexpr char WIFI_REQUEST_RESULT_CHARACTERISTIC_UUID[] = "7b9f0014-6c5a-4e8f-9d3a-2f1b7c8e0001";
 
-class WifiConfigCallbacks : public BLECharacteristicCallbacks {
+class WifiConfigCallbacks : public NimBLECharacteristicCallbacks {
    public:
-    WifiConfigCallbacks(WifiManager& wifiManager, BLECharacteristic& requestResult)
+    WifiConfigCallbacks(WifiManager& wifiManager, NimBLECharacteristic& requestResult)
         : wifiManager_(wifiManager), requestResult_(requestResult) {}
 
-    void onWrite(BLECharacteristic* characteristic) override {
+    void onWrite(NimBLECharacteristic* characteristic, NimBLEConnInfo& connInfo) override {
         const std::string value = characteristic->getValue();
 
         if (value.empty() || value.find('\0') != std::string::npos) {
@@ -52,7 +51,7 @@ class WifiConfigCallbacks : public BLECharacteristicCallbacks {
 
    private:
     WifiManager& wifiManager_;
-    BLECharacteristic& requestResult_;
+    NimBLECharacteristic& requestResult_;
 
     void reportResult(const char* result) {
         requestResult_.setValue(result);
@@ -62,21 +61,20 @@ class WifiConfigCallbacks : public BLECharacteristicCallbacks {
     }
 };
 
-void BleProvisioningService::begin(BLEServer* server, const DeviceIdentity& identity,
+void BleProvisioningService::begin(NimBLEServer* server, const DeviceIdentity& identity,
                                    WifiManager& wifiManager) {
-    BLEService* provisioningService = server->createService(PROVISIONING_SERVICE_UUID);
+    NimBLEService* provisioningService = server->createService(PROVISIONING_SERVICE_UUID);
 
     deviceIdentityCharacteristic_ = provisioningService->createCharacteristic(
-        DEVICE_IDENTITY_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ);
+        DEVICE_IDENTITY_CHARACTERISTIC_UUID, NIMBLE_PROPERTY::READ);
 
     wifiConfigCharacteristic_ = provisioningService->createCharacteristic(
-        WIFI_CONFIG_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_WRITE);
+        WIFI_CONFIG_CHARACTERISTIC_UUID, NIMBLE_PROPERTY::WRITE);
 
     wifiRequestResultCharacteristic_ = provisioningService->createCharacteristic(
         WIFI_REQUEST_RESULT_CHARACTERISTIC_UUID,
-        BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
+        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
 
-    wifiRequestResultCharacteristic_->addDescriptor(new BLE2902());
     wifiRequestResultCharacteristic_->setValue("idle");
 
     wifiConfigCharacteristic_->setCallbacks(
@@ -91,12 +89,9 @@ void BleProvisioningService::begin(BLEServer* server, const DeviceIdentity& iden
 
     wifiStatusCharacteristic_ = provisioningService->createCharacteristic(
         WIFI_STATUS_CHARACTERISTIC_UUID,
-        BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
+        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
 
-    wifiStatusCharacteristic_->addDescriptor(new BLE2902());
     wifiStatusCharacteristic_->setValue("idle");
-
-    provisioningService->start();
 }
 
 void BleProvisioningService::update(WifiProvisioningState state) {

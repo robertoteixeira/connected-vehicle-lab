@@ -1,8 +1,6 @@
 #include <Adafruit_SSD1306.h>
 #include <Arduino.h>
 #include <Wire.h>
-#include <esp_bt.h>
-#include <esp_err.h>
 
 #include "AzureIoTManager.h"
 #include "BleProvisioningService.h"
@@ -160,11 +158,13 @@ void updateDisplay() {
     display.display();
 }
 
-class VehicleServerCallbacks : public BLEServerCallbacks {
+class VehicleServerCallbacks : public NimBLEServerCallbacks {
    public:
-    void onConnect(BLEServer* server) override { Serial.println("BLE client connected"); }
-    void onDisconnect(BLEServer* server) override {
-        Serial.println("BLE client disconnected");
+    void onConnect(NimBLEServer* server, NimBLEConnInfo& connInfo) override {
+        Serial.println("BLE client connected");
+    }
+    void onDisconnect(NimBLEServer* server, NimBLEConnInfo& connInfo, int reason) override {
+        Serial.printf("BLE client disconnected: %d\n", reason);
 
         server->startAdvertising();
 
@@ -188,21 +188,26 @@ void setup() {
         Serial.println("Azure MQTT client initialization failed");
     }
 
-    // Release unused Classic Bluetooth memory before starting the BLE controller.
-    ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
+    if (!NimBLEDevice::init("ConnectedVehicle")) {
+        Serial.println("NimBLE initialization failed");
+        while (true) {
+            delay(1000);
+        }
+    }
 
-    esp_bt_controller_config_t bluetoothConfig = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-    bluetoothConfig.mode = ESP_BT_MODE_BLE;
-
-    ESP_ERROR_CHECK(esp_bt_controller_init(&bluetoothConfig));
-    ESP_ERROR_CHECK(esp_bt_controller_enable(ESP_BT_MODE_BLE));
-
-    BLEDevice::init("ConnectedVehicle");
-    BLEServer* bleServer = BLEDevice::createServer();
+    NimBLEServer* bleServer = NimBLEDevice::createServer();
     bleServer->setCallbacks(new VehicleServerCallbacks());
 
     bleVehicleService.begin(bleServer, vehicleState);
     bleProvisioningService.begin(bleServer, deviceIdentity, wifiManager);
+
+    bleServer->start();
+
+    NimBLEAdvertising* advertising = NimBLEDevice::getAdvertising();
+    advertising->addServiceUUID("7b9f0001-6c5a-4e8f-9d3a-2f1b7c8e0001");
+    advertising->enableScanResponse(true);
+    advertising->setName("ConnectedVehicle");
+    advertising->start();
 
     Wire.begin(21, 22);
 
