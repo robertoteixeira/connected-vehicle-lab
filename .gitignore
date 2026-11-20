@@ -16,6 +16,7 @@
 # firmware/.vscode/ can remain version-controlled.
 # ============================================================
 /.vscode/
+/firmware/.vscode/c_cpp_properties.json
 
 # ============================================================
 # Xcode
