@@ -15,9 +15,34 @@ extern "C" esp_err_t esp_crt_bundle_attach(void* conf);
 namespace {
 void onMqttEvent(void* handlerArgs, esp_event_base_t eventBase, int32_t eventId, void* eventData) {
     switch (eventId) {
-        case MQTT_EVENT_CONNECTED:
+        case MQTT_EVENT_CONNECTED: {
             Serial.println("Azure MQTT connected");
+
+            const auto* event = static_cast<esp_mqtt_event_t*>(eventData);
+
+            const String topic = String("devices/") + AzureIoTConfig::DEVICE_ID +
+                                 "/messages/events/$.ct=application%2Fjson&$.ce=utf-8";
+
+            const char* payload = "{\"message\":\"Hello from ESP32\"}";
+
+            const int messageId =
+                esp_mqtt_client_enqueue(event->client, topic.c_str(), payload, 0, 1, 0, true);
+
+            if (messageId < 0) {
+                Serial.println("Azure test message queue failed");
+            } else {
+                Serial.printf("Azure test message queued: %d\n", messageId);
+            }
+
             break;
+        }
+
+        case MQTT_EVENT_PUBLISHED: {
+            const auto* event = static_cast<esp_mqtt_event_t*>(eventData);
+
+            Serial.printf("Azure acknowledged message: %d\n", event->msg_id);
+            break;
+        }
 
         case MQTT_EVENT_DISCONNECTED:
             Serial.println("Azure MQTT disconnected");
@@ -31,14 +56,13 @@ void onMqttEvent(void* handlerArgs, esp_event_base_t eventBase, int32_t eventId,
             if (event != nullptr && event->error_handle != nullptr) {
                 const auto* error = event->error_handle;
 
-                Serial.printf("TLS error: %d, certificate flags: 0x%X\n",
-                              error->esp_tls_stack_err,
+                Serial.printf("TLS error: %d, certificate flags: 0x%X\n", error->esp_tls_stack_err,
                               static_cast<unsigned>(error->esp_tls_cert_verify_flags));
 
                 if (error->esp_tls_cert_verify_flags != 0) {
                     char details[512] = {};
-                    mbedtls_x509_crt_verify_info(
-                        details, sizeof(details), "  ", error->esp_tls_cert_verify_flags);
+                    mbedtls_x509_crt_verify_info(details, sizeof(details), "  ",
+                                                 error->esp_tls_cert_verify_flags);
                     Serial.print(details);
                 }
             }
