@@ -13,7 +13,10 @@ constexpr uint8_t IGNITION_BUTTON_PIN = 27;
 constexpr uint8_t THROTTLE_PIN = 34;
 constexpr uint8_t BRAKE_BUTTON_PIN = 26;
 constexpr uint8_t HEADLIGHT_BUTTON_PIN = 25;
+
 constexpr unsigned long BUTTON_DEBOUNCE_MS = 50;
+constexpr unsigned long CLOUD_TELEMETRY_INTERVAL_MS = 30000;
+
 constexpr float IDLE_RPM = 800.0F;
 constexpr float MAX_RPM = 6000.0F;
 constexpr float MAX_SPEED_KPH = 180.0F;
@@ -45,6 +48,7 @@ AzureIoTManager azureIoTManager;
 unsigned long lastSimulationUpdateMs = 0;
 unsigned long lastTelemetryMs = 0;
 unsigned long lastDisplayUpdateMs = 0;
+unsigned long lastCloudTelemetryMs = 0;
 bool lastIgnitionPressed = false;
 bool lastHeadlightPressed = false;
 
@@ -271,5 +275,10 @@ void loop() {
 
         bleVehicleService.update(vehicleState);
         printTelemetry();
+    }
+
+    if (now - lastCloudTelemetryMs >= CLOUD_TELEMETRY_INTERVAL_MS) {
+        lastCloudTelemetryMs = now;
+        azureIoTManager.publishSpeed(vehicleState.speedKph);
     }
 }

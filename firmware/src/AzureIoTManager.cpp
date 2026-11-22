@@ -12,28 +12,14 @@
 // ESP-IDF function linked from libmbedtls to use its built-in CA bundle.
 extern "C" esp_err_t esp_crt_bundle_attach(void* conf);
 
-namespace {
-void onMqttEvent(void* handlerArgs, esp_event_base_t eventBase, int32_t eventId, void* eventData) {
+void AzureIoTManager::onMqttEvent(void* handlerArgs, esp_event_base_t eventBase, int32_t eventId,
+                                  void* eventData) {
+    auto* manager = static_cast<AzureIoTManager*>(handlerArgs);
+
     switch (eventId) {
         case MQTT_EVENT_CONNECTED: {
+            manager->connected_.store(true);
             Serial.println("Azure MQTT connected");
-
-            const auto* event = static_cast<esp_mqtt_event_t*>(eventData);
-
-            const String topic = String("devices/") + AzureIoTConfig::DEVICE_ID +
-                                 "/messages/events/$.ct=application%2Fjson&$.ce=utf-8";
-
-            const char* payload = "{\"message\":\"Hello from ESP32\"}";
-
-            const int messageId =
-                esp_mqtt_client_enqueue(event->client, topic.c_str(), payload, 0, 1, 0, true);
-
-            if (messageId < 0) {
-                Serial.println("Azure test message queue failed");
-            } else {
-                Serial.printf("Azure test message queued: %d\n", messageId);
-            }
-
             break;
         }
 
@@ -45,10 +31,12 @@ void onMqttEvent(void* handlerArgs, esp_event_base_t eventBase, int32_t eventId,
         }
 
         case MQTT_EVENT_DISCONNECTED:
+            manager->connected_.store(false);
             Serial.println("Azure MQTT disconnected");
             break;
 
         case MQTT_EVENT_ERROR: {
+            manager->connected_.store(false);
             Serial.println("Azure MQTT connection error");
 
             const auto* event = static_cast<esp_mqtt_event_t*>(eventData);
@@ -74,7 +62,6 @@ void onMqttEvent(void* handlerArgs, esp_event_base_t eventBase, int32_t eventId,
             break;
     }
 }
-}  // namespace
 
 bool AzureIoTManager::begin() {
     if (client_ != nullptr) {
@@ -95,7 +82,7 @@ bool AzureIoTManager::begin() {
     }
 
     const esp_err_t result = esp_mqtt_client_register_event(
-        client_, static_cast<esp_mqtt_event_id_t>(ESP_EVENT_ANY_ID), onMqttEvent, nullptr);
+        client_, static_cast<esp_mqtt_event_id_t>(ESP_EVENT_ANY_ID), onMqttEvent, this);
 
     if (result != ESP_OK) {
         esp_mqtt_client_destroy(client_);
@@ -175,4 +162,26 @@ void AzureIoTManager::update() {
 
     mqttStarted_ = true;
     Serial.println("Azure MQTT client started");
+}
+
+bool AzureIoTManager::publishSpeed(float speedKph) {
+    if (client_ == nullptr || !connected_.load()) {
+        return false;
+    }
+
+    char payload[64];
+    snprintf(payload, sizeof(payload), "{\"speedKph\":%.1f}", speedKph);
+
+    const String topic = String("devices/") + AzureIoTConfig::DEVICE_ID +
+                         "/messages/events/$.ct=application%2Fjson&$.ce=utf-8";
+
+    const int messageId = esp_mqtt_client_enqueue(client_, topic.c_str(), payload, 0, 1, 0, true);
+
+    if (messageId < 0) {
+        Serial.println("Azure speed message queue failed");
+        return false;
+    }
+
+    Serial.printf("Azure speed queued: %s\n", payload);
+    return true;
 }

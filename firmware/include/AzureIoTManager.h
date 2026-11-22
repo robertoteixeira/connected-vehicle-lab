@@ -2,10 +2,13 @@
 
 #include <mqtt_client.h>
 
+#include <atomic>
+
 class AzureIoTManager {
    public:
     bool begin();
     void update();
+    bool publishSpeed(float speedKph);
 
    private:
     esp_mqtt_client_handle_t client_ = nullptr;
@@ -13,4 +16,7 @@ class AzureIoTManager {
     bool clockReady_ = false;
     bool mqttStarted_ = false;
     unsigned long lastConnectionAttemptMs_ = 0;
+    std::atomic<bool> connected_{false};
+    static void onMqttEvent(void* handlerArgs, esp_event_base_t eventBase, int32_t eventId,
+                            void* eventData);
 };
