@@ -2,7 +2,7 @@
 
 A connected-device portfolio project built with ESP32 firmware and **Vehicle Lab**, a native SwiftUI and CoreBluetooth iOS app. Physical controls drive a simulated vehicle; its state appears on an OLED and streams to the app over BLE. The app also reads device identity and configures the ESP32's Wi-Fi connection.
 
-Values are simulated. This project does not interface with a real vehicle or CAN bus. Wi-Fi provisioning works locally; Azure IoT connectivity is in progress, and the backend is not implemented.
+Values are simulated. This project does not interface with a real vehicle or CAN bus. Wi-Fi provisioning works locally, and the ESP32 publishes speed telemetry to Azure IoT Hub. An ASP.NET Core backend foundation is available; consuming cloud telemetry and exposing it to mobile clients are not implemented yet.
 
 ## System overview
 
@@ -158,6 +158,24 @@ ios/ConnectedVehicle/
 
 docs/BLE_PROTOCOL.md                  BLE protocol reference
 ```
+
+## Backend
+
+The backend is an ASP.NET Core Minimal API targeting .NET 10. It currently exposes only a process health endpoint; it does not consume Azure IoT Hub messages yet.
+
+From the repository root:
+
+```bash
+dotnet run --project backend/VehicleLab.Api --no-launch-profile --urls http://localhost:5050
+```
+
+In another terminal:
+
+```bash
+curl -i http://localhost:5050/health
+```
+
+Expected response: HTTP 200 with `{"status":"ok"}`. This checks that the API is responding, not Azure connectivity. Local HTTP is used for this development check.
 
 ## Status and next steps
 

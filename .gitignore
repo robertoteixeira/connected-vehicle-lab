@@ -61,3 +61,7 @@ playground.xcworkspace
 *.tmp
 *.temp
 *~
+
+# .NET build output
+[Bb]in/
+[Oo]bj/
