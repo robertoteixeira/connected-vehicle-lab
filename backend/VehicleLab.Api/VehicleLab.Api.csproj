@@ -6,4 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Azure.Messaging.EventHubs" Version="5.12.2" />
+  </ItemGroup>
+
 </Project>
