@@ -161,12 +161,14 @@ docs/BLE_PROTOCOL.md                  BLE protocol reference
 
 ## Backend
 
-The backend is an ASP.NET Core Minimal API targeting .NET 10. It currently exposes only a process health endpoint; it does not consume Azure IoT Hub messages yet.
+The backend is an ASP.NET Core Minimal API targeting .NET 10. A hosted background service reads new messages from IoT Hub through its Event Hubs-compatible endpoint and logs their JSON payloads. Receipt of changing ESP32 speed readings has been verified. The API currently exposes only a process health endpoint; telemetry parsing, storage, and read endpoints are not implemented yet.
+
+Configure the `IoTHub:EventHubConnectionString` key with .NET User Secrets for `backend/VehicleLab.Api`. Use the Event Hubs-compatible connection string with service-connect permissions, not an ESP32 device connection string. User Secrets stores the value outside the repository; never commit it in application settings.
 
 From the repository root:
 
 ```bash
-dotnet run --project backend/VehicleLab.Api --no-launch-profile --urls http://localhost:5050
+DOTNET_ENVIRONMENT=Development dotnet run --project backend/VehicleLab.Api --no-launch-profile --urls http://localhost:5050
 ```
 
 In another terminal:
@@ -175,7 +177,7 @@ In another terminal:
 curl -i http://localhost:5050/health
 ```
 
-Expected response: HTTP 200 with `{"status":"ok"}`. This checks that the API is responding, not Azure connectivity. Local HTTP is used for this development check.
+Expected response: HTTP 200 with `{"status":"ok"}`. This checks that the API is responding, not Azure connectivity. Local HTTP is used for this development check. The consumer uses `$Default` and starts at new events on each restart; it does not save checkpoints or recover missed messages. Ctrl+C cancels the receive loop and disposes the client. The ESP32 currently needs a restart and Wi-Fi provisioning to obtain a new SAS token after its one-hour token expires.
 
 ## Status and next steps
 
